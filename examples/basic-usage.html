@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArtistAPhoto - Basic Usage</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .main-layout {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1024px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .controls-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .preview-column {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .container h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #333;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    button {
+      padding: 10px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .undo-redo button {
+      background: #6c757d;
+    }
+    .undo-redo button:hover:not(:disabled) {
+      background: #545b62;
+    }
+    .load-sample {
+      background: #28a745;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .load-sample:hover {
+      background: #218838;
+    }
+    input[type="file"] {
+      padding: 10px;
+      border: 2px dashed #007bff;
+      border-radius: 4px;
+      width: 100%;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .canvas-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .canvas-wrapper {
+      text-align: center;
+    }
+    .canvas-wrapper h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #666;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fafafa;
+    }
+    .slider-group {
+      margin-bottom: 12px;
+    }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #555;
+    }
+    input[type="range"] {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+    .slider-value {
+      color: #007bff;
+      font-weight: bold;
+    }
+    .apply-adjustments {
+      width: 100%;
+      background: #17a2b8;
+      margin-top: 10px;
+    }
+    .apply-adjustments:hover {
+      background: #138496;
+    }
+    .export-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .export-buttons button {
+      flex: 1;
+      font-size: 12px;
+    }
+    .no-image-message {
+      padding: 40px;
+      text-align: center;
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 ArtistAPhoto SDK - Demo</h1>
+
+  <div class="main-layout">
+    <!-- Coluna de Controles (Esquerda) -->
+    <div class="controls-column">
+      <div class="container">
+        <h2>📁 Carregar Imagem</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button class="load-sample" onclick="loadSampleImage()">📸 Usar Imagem de Exemplo</button>
+      </div>
+
+      <div class="container">
+        <h2>✂️ Crop</h2>
+        <div class="crop-inputs">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">X:</label>
+              <input type="number" id="cropX" value="50" min="0" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Y:</label>
+              <input type="number" id="cropY" value="50" min="0" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Width:</label>
+              <input type="number" id="cropWidth" value="300" min="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Height:</label>
+              <input type="number" id="cropHeight" value="300" min="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button onclick="setCropSquare()" style="background: #6c757d; font-size: 12px; padding: 8px;">📐 Quadrado</button>
+            <button class="apply-adjustments" onclick="applyCrop()" style="font-size: 12px; padding: 8px;">✂️ Aplicar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <h2>📐 Resize</h2>
+        <div class="resize-inputs">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">Width:</label>
+              <input type="number" id="resizeWidth" value="400" min="1"
+                     oninput="updateResizeHeight()"
+                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Height:</label>
+              <input type="number" id="resizeHeight" value="300" min="1"
+                     oninput="updateResizeWidth()"
+                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+              <input type="checkbox" id="maintainAspect" checked>
+              Manter proporção (aspect ratio)
+            </label>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button onclick="resetResizeToCurrentSize()" style="background: #6c757d; font-size: 12px; padding: 8px;">🔄 Tamanho Atual</button>
+            <button class="apply-adjustments" onclick="applyResize()" style="font-size: 12px; padding: 8px;">📐 Aplicar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <h2>🎨 Filtros</h2>
+        <div class="controls">
+          <button onclick="applyFilter('grayscale')">Grayscale</button>
+          <button onclick="applyFilter('sepia')">Sepia</button>
+          <button onclick="applyFilter('blur')">Blur</button>
+          <button onclick="applyFilter('sharpen')">Sharpen</button>
+          <button onclick="applyFilter('vintage')">Vintage</button>
+          <button onclick="applyFilter('invert')">Invert</button>
+          <button onclick="applyFilter('vignette')">Vignette</button>
+          <button onclick="applyFilter('posterize')">Posterize</button>
+          <button onclick="applyFilter('pixelate')">Pixelate</button>
+          <button onclick="applyFilter('edgeDetection')">Edge Detect</button>
+        </div>
+      </div>
+
+      <div class="container">
+        <h2>⚙️ Ajustes</h2>
+        <div class="slider-group">
+          <label>
+            <span>Brightness</span>
+            <span class="slider-value" id="brightnessValue">0</span>
+          </label>
+          <input type="range" id="brightness" min="-100" max="100" value="0"
+                 oninput="updateSliderValue('brightness')">
+        </div>
+        <div class="slider-group">
+          <label>
+            <span>Contrast</span>
+            <span class="slider-value" id="contrastValue">0</span>
+          </label>
+          <input type="range" id="contrast" min="-100" max="100" value="0"
+                 oninput="updateSliderValue('contrast')">
+        </div>
+        <div class="slider-group">
+          <label>
+            <span>Saturation</span>
+            <span class="slider-value" id="saturationValue">0</span>
+          </label>
+          <input type="range" id="saturation" min="-100" max="100" value="0"
+                 oninput="updateSliderValue('saturation')">
+        </div>
+        <div class="slider-group">
+          <label>
+            <span>Exposure</span>
+            <span class="slider-value" id="exposureValue">0</span>
+          </label>
+          <input type="range" id="exposure" min="-100" max="100" value="0"
+                 oninput="updateSliderValue('exposure')">
+        </div>
+        <div class="slider-group">
+          <label>
+            <span>Temperature</span>
+            <span class="slider-value" id="temperatureValue">0</span>
+          </label>
+          <input type="range" id="temperature" min="-100" max="100" value="0"
+                 oninput="updateSliderValue('temperature')">
+        </div>
+        <button class="apply-adjustments" onclick="applyAdjustments()">✓ Aplicar Ajustes</button>
+      </div>
+
+      <div class="container">
+        <h2>↩️ Undo/Redo</h2>
+        <div class="controls undo-redo">
+          <button id="undoBtn" onclick="undo()" disabled>← Undo</button>
+          <button id="redoBtn" onclick="redo()" disabled>Redo →</button>
+          <button onclick="reset()">🔄 Reset</button>
+        </div>
+      </div>
+
+      <div class="container">
+        <h2>💾 Export</h2>
+        <div class="export-buttons">
+          <button onclick="downloadImage('jpeg')">JPEG</button>
+          <button onclick="downloadImage('png')">PNG</button>
+          <button onclick="downloadImage('webp')">WebP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna de Preview (Direita) -->
+    <div class="preview-column">
+      <h2>👁️ Preview</h2>
+      <div class="canvas-container" id="canvasContainer">
+        <div class="no-image-message">
+          Carregue uma imagem para começar
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { ArtistAPhoto } from '../dist/index.mjs';
+
+    let editor = null;
+
+    // Cria estrutura de canvas
+    function createCanvasStructure() {
+      const container = document.getElementById('canvasContainer');
+      container.innerHTML = `
+        <div class="canvas-wrapper">
+          <h3>Original</h3>
+          <canvas id="originalCanvas"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+          <h3>Editada</h3>
+          <canvas id="previewCanvas"></canvas>
+        </div>
+      `;
+    }
+
+    // Atualiza preview
+    async function updatePreview() {
+      if (!editor) return;
+
+      const canvas = await editor.preview();
+      const previewCanvas = document.getElementById('previewCanvas');
+      const ctx = previewCanvas.getContext('2d');
+
+      previewCanvas.width = canvas.width;
+      previewCanvas.height = canvas.height;
+      ctx.drawImage(canvas, 0, 0);
+
+      updateUndoRedoButtons();
+    }
+
+    // Atualiza botões de undo/redo
+    function updateUndoRedoButtons() {
+      document.getElementById('undoBtn').disabled = !editor.canUndo();
+      document.getElementById('redoBtn').disabled = !editor.canRedo();
+    }
+
+    // Atualiza valores padrão de crop e resize
+    function updateDefaultValues() {
+      const imgWidth = editor.getOriginal().width;
+      const imgHeight = editor.getOriginal().height;
+
+      // Atualizar aspect ratio
+      aspectRatio = imgWidth / imgHeight;
+
+      // Atualizar valores de crop (20% das bordas)
+      document.getElementById('cropX').value = Math.floor(imgWidth * 0.1);
+      document.getElementById('cropY').value = Math.floor(imgHeight * 0.1);
+      document.getElementById('cropWidth').value = Math.floor(imgWidth * 0.8);
+      document.getElementById('cropHeight').value = Math.floor(imgHeight * 0.8);
+
+      // Atualizar valores de resize (tamanho original)
+      document.getElementById('resizeWidth').value = imgWidth;
+      document.getElementById('resizeHeight').value = imgHeight;
+    }
+
+    // Carregar imagem
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        editor = await ArtistAPhoto.fromFile(file);
+
+        // Criar estrutura de canvas
+        createCanvasStructure();
+
+        // Mostrar original
+        const originalCanvas = document.getElementById('originalCanvas');
+        const originalCtx = originalCanvas.getContext('2d');
+        originalCanvas.width = editor.getOriginal().width;
+        originalCanvas.height = editor.getOriginal().height;
+        originalCtx.putImageData(editor.getOriginal(), 0, 0);
+
+        // Atualizar valores padrão
+        updateDefaultValues();
+
+        await updatePreview();
+      } catch (error) {
+        alert('Erro ao carregar imagem: ' + error.message);
+      }
+    });
+
+    // Funções globais
+    window.loadSampleImage = async () => {
+      // Cria uma imagem de exemplo com gradiente
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+
+      // Gradiente
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#667eea');
+      gradient.addColorStop(0.5, '#764ba2');
+      gradient.addColorStop(1, '#f093fb');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Círculos decorativos
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(100, 100, 80, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(500, 300, 100, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+
+      // Texto
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 56px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 10;
+      ctx.fillText('ArtistAPhoto', canvas.width / 2, canvas.height / 2);
+      ctx.shadowBlur = 0;
+
+      editor = await ArtistAPhoto.fromCanvas(canvas);
+
+      // Criar estrutura de canvas
+      createCanvasStructure();
+
+      // Mostrar original
+      const originalCanvas = document.getElementById('originalCanvas');
+      const originalCtx = originalCanvas.getContext('2d');
+      originalCanvas.width = canvas.width;
+      originalCanvas.height = canvas.height;
+      originalCtx.drawImage(canvas, 0, 0);
+
+      // Atualizar valores padrão
+      updateDefaultValues();
+
+      await updatePreview();
+    };
+
+    window.setCropSquare = () => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const imgWidth = editor.getOriginal().width;
+      const imgHeight = editor.getOriginal().height;
+      const size = Math.min(imgWidth, imgHeight);
+      const x = Math.floor((imgWidth - size) / 2);
+      const y = Math.floor((imgHeight - size) / 2);
+
+      document.getElementById('cropX').value = x;
+      document.getElementById('cropY').value = y;
+      document.getElementById('cropWidth').value = size;
+      document.getElementById('cropHeight').value = size;
+    };
+
+    window.applyCrop = async () => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const x = parseInt(document.getElementById('cropX').value);
+      const y = parseInt(document.getElementById('cropY').value);
+      const width = parseInt(document.getElementById('cropWidth').value);
+      const height = parseInt(document.getElementById('cropHeight').value);
+
+      try {
+        editor.crop({ x, y, width, height });
+        await updatePreview();
+
+        // Atualizar aspect ratio e valores de resize após crop
+        aspectRatio = width / height;
+        document.getElementById('resizeWidth').value = width;
+        document.getElementById('resizeHeight').value = height;
+      } catch (error) {
+        alert('Erro ao aplicar crop: ' + error.message);
+      }
+    };
+
+    let aspectRatio = 1;
+    let isUpdating = false;
+
+    window.resetResizeToCurrentSize = async () => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const canvas = await editor.preview();
+      document.getElementById('resizeWidth').value = canvas.width;
+      document.getElementById('resizeHeight').value = canvas.height;
+      aspectRatio = canvas.width / canvas.height;
+    };
+
+    window.updateResizeHeight = () => {
+      if (!document.getElementById('maintainAspect').checked || isUpdating) return;
+
+      isUpdating = true;
+      const width = parseInt(document.getElementById('resizeWidth').value);
+      const height = Math.round(width / aspectRatio);
+      document.getElementById('resizeHeight').value = height;
+      isUpdating = false;
+    };
+
+    window.updateResizeWidth = () => {
+      if (!document.getElementById('maintainAspect').checked || isUpdating) return;
+
+      isUpdating = true;
+      const height = parseInt(document.getElementById('resizeHeight').value);
+      const width = Math.round(height * aspectRatio);
+      document.getElementById('resizeWidth').value = width;
+      isUpdating = false;
+    };
+
+    window.applyResize = async () => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const width = parseInt(document.getElementById('resizeWidth').value);
+      const height = parseInt(document.getElementById('resizeHeight').value);
+      const maintainAspectRatio = document.getElementById('maintainAspect').checked;
+
+      try {
+        editor.resize(width, height, {
+          quality: 'high',
+          maintainAspectRatio
+        });
+        await updatePreview();
+
+        // Atualizar aspect ratio após resize
+        aspectRatio = width / height;
+      } catch (error) {
+        alert('Erro ao aplicar resize: ' + error.message);
+      }
+    };
+
+    window.applyFilter = async (filterType) => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      editor.filter(filterType, 0.8);
+      await updatePreview();
+    };
+
+    window.updateSliderValue = (type) => {
+      const slider = document.getElementById(type);
+      const valueSpan = document.getElementById(type + 'Value');
+      valueSpan.textContent = slider.value;
+    };
+
+    window.applyAdjustments = async () => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const brightness = parseInt(document.getElementById('brightness').value);
+      const contrast = parseInt(document.getElementById('contrast').value);
+      const saturation = parseInt(document.getElementById('saturation').value);
+      const exposure = parseInt(document.getElementById('exposure').value);
+      const temperature = parseInt(document.getElementById('temperature').value);
+
+      if (brightness !== 0) editor.brightness(brightness);
+      if (contrast !== 0) editor.contrast(contrast);
+      if (saturation !== 0) editor.saturation(saturation);
+      if (exposure !== 0) editor.exposure(exposure);
+      if (temperature !== 0) editor.temperature(temperature);
+
+      await updatePreview();
+
+      // Reset sliders
+      ['brightness', 'contrast', 'saturation', 'exposure', 'temperature'].forEach(type => {
+        document.getElementById(type).value = 0;
+        document.getElementById(type + 'Value').textContent = '0';
+      });
+    };
+
+    window.undo = async () => {
+      if (!editor) return;
+      editor.undo();
+      await updatePreview();
+    };
+
+    window.redo = async () => {
+      if (!editor) return;
+      editor.redo();
+      await updatePreview();
+    };
+
+    window.reset = async () => {
+      if (!editor) return;
+      editor.reset();
+      await updatePreview();
+    };
+
+    window.downloadImage = async (format) => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const formatMap = {
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        webp: 'image/webp'
+      };
+
+      await editor.download(`artistaphoto-edited.${format}`, formatMap[format], 0.9);
+    };
+  </script>
+</body>
+</html>
