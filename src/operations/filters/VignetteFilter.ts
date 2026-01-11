@@ -17,7 +17,7 @@ export class VignetteFilter extends FilterOperation {
     const centerX = width / 2;
     const centerY = height / 2;
     const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
-    const { strength } = this.params;
+    const strength = this.params.strength || 0.5;
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {

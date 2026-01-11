@@ -14,7 +14,7 @@ export class PixelateFilter extends FilterOperation {
   }
 
   protected applyFilter(data: Uint8ClampedArray, width: number, height: number): void {
-    const { blockSize } = this.params;
+    const blockSize = this.params.blockSize || 10;
     const original = new Uint8ClampedArray(data);
 
     for (let y = 0; y < height; y += blockSize) {

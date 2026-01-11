@@ -15,7 +15,7 @@ export class PosterizeFilter extends FilterOperation {
   }
 
   protected applyFilter(data: Uint8ClampedArray): void {
-    const { levels } = this.params;
+    const levels = this.params.levels || 4;
     const step = 255 / (levels - 1);
 
     for (let i = 0; i < data.length; i += 4) {
