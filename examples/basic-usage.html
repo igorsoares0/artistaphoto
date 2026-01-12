@@ -236,6 +236,77 @@
       </div>
 
       <div class="container">
+        <h2>✍️ Adicionar Texto</h2>
+        <div class="text-inputs">
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">Texto:</label>
+            <input type="text" id="textContent" value="Hello World" placeholder="Digite o texto..."
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">X:</label>
+              <input type="number" id="textX" value="50" min="0"
+                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Y:</label>
+              <input type="number" id="textY" value="50" min="0"
+                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Tamanho:</label>
+              <input type="number" id="textSize" value="32" min="8" max="200"
+                     style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+              <label style="font-size: 12px; color: #666;">Fonte:</label>
+              <select id="textFont" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="Arial">Arial</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Comic Sans MS">Comic Sans MS</option>
+                <option value="Impact">Impact</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 12px; color: #666;">Cor:</label>
+              <input type="color" id="textColor" value="#000000"
+                     style="width: 100%; height: 34px; padding: 2px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-bottom: 10px; font-size: 12px;">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+              <input type="checkbox" id="textBold">
+              <strong>Negrito</strong>
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+              <input type="checkbox" id="textItalic">
+              <em>Itálico</em>
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+              <input type="checkbox" id="textStroke">
+              Contorno
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+              <input type="checkbox" id="textShadow">
+              Sombra
+            </label>
+          </div>
+
+          <button class="apply-adjustments" onclick="applyText()" style="width: 100%;">✍️ Adicionar Texto</button>
+        </div>
+      </div>
+
+      <div class="container">
         <h2>🎨 Filtros</h2>
         <div class="controls">
           <button onclick="applyFilter('grayscale')">Grayscale</button>
@@ -566,6 +637,65 @@
         aspectRatio = width / height;
       } catch (error) {
         alert('Erro ao aplicar resize: ' + error.message);
+      }
+    };
+
+    window.applyText = async () => {
+      if (!editor) {
+        alert('Carregue uma imagem primeiro!');
+        return;
+      }
+
+      const text = document.getElementById('textContent').value;
+      if (!text) {
+        alert('Digite um texto primeiro!');
+        return;
+      }
+
+      const x = parseInt(document.getElementById('textX').value);
+      const y = parseInt(document.getElementById('textY').value);
+      const fontSize = parseInt(document.getElementById('textSize').value);
+      const fontFamily = document.getElementById('textFont').value;
+      const color = document.getElementById('textColor').value;
+      const bold = document.getElementById('textBold').checked;
+      const italic = document.getElementById('textItalic').checked;
+      const hasStroke = document.getElementById('textStroke').checked;
+      const hasShadow = document.getElementById('textShadow').checked;
+
+      const options = {
+        text,
+        x,
+        y,
+        fontSize,
+        fontFamily,
+        color,
+        bold,
+        italic,
+      };
+
+      // Adicionar contorno se habilitado
+      if (hasStroke) {
+        options.stroke = {
+          color: color === '#000000' ? '#FFFFFF' : '#000000', // Cor oposta
+          width: 2
+        };
+      }
+
+      // Adicionar sombra se habilitado
+      if (hasShadow) {
+        options.shadow = {
+          color: 'rgba(0, 0, 0, 0.5)',
+          blur: 4,
+          offsetX: 2,
+          offsetY: 2
+        };
+      }
+
+      try {
+        editor.addText(options);
+        await updatePreview();
+      } catch (error) {
+        alert('Erro ao adicionar texto: ' + error.message);
       }
     };
 

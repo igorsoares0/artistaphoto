@@ -4,6 +4,8 @@ export type {
   CropOptions,
   ResizeOptions,
   ResizeParams,
+  TextOptions,
+  TextParams,
 } from './operations';
 
 export type {

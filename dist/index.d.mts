@@ -1,4 +1,4 @@
-type OperationType = 'crop' | 'resize' | 'filter' | 'adjustment';
+type OperationType = 'crop' | 'resize' | 'filter' | 'adjustment' | 'text';
 interface OperationParams {
     [key: string]: any;
 }
@@ -11,6 +11,42 @@ interface CropOptions {
 interface ResizeOptions {
     quality?: 'low' | 'medium' | 'high';
     maintainAspectRatio?: boolean;
+}
+interface TextOptions {
+    text: string;
+    x: number;
+    y: number;
+    fontSize?: number;
+    fontFamily?: string;
+    color?: string;
+    align?: 'left' | 'center' | 'right';
+    baseline?: 'top' | 'middle' | 'bottom' | 'alphabetic';
+    maxWidth?: number;
+    bold?: boolean;
+    italic?: boolean;
+    stroke?: {
+        color: string;
+        width: number;
+    };
+    shadow?: {
+        color: string;
+        blur: number;
+        offsetX: number;
+        offsetY: number;
+    };
+    rotation?: number;
+}
+interface TextParams extends Required<Omit<TextOptions, 'stroke' | 'shadow'>> {
+    stroke?: {
+        color: string;
+        width: number;
+    };
+    shadow?: {
+        color: string;
+        blur: number;
+        offsetX: number;
+        offsetY: number;
+    };
 }
 
 type FilterType = 'grayscale' | 'sepia' | 'blur' | 'sharpen' | 'vintage' | 'invert' | 'vignette' | 'posterize' | 'pixelate' | 'edgeDetection';
@@ -56,6 +92,7 @@ declare class ArtistAPhoto {
     static fromImageElement(img: HTMLImageElement): Promise<ArtistAPhoto>;
     crop(options: CropOptions): this;
     resize(width: number, height: number, options?: ResizeOptions): this;
+    addText(options: TextOptions): this;
     filter(type: FilterType, intensity?: number): this;
     brightness(value: number): this;
     contrast(value: number): this;
@@ -119,4 +156,4 @@ declare class WorkerPool {
 
 declare function createEditor(source: string | File | HTMLImageElement | HTMLCanvasElement): Promise<ArtistAPhoto>;
 
-export { type AdjustmentParams, type AdjustmentType, ArtistAPhoto, ArtistAPhotoError, CanvasContextError, type CropOptions, ExportError, type ExportFormat, type ExportOptions, type FilterParams, type FilterType, ImageLoadError, type ImageMetadata, InvalidCropError, InvalidDimensionsError, type OperationType, type ResizeOptions, WorkerPool, type WorkerResponse, type WorkerTask, createEditor };
+export { type AdjustmentParams, type AdjustmentType, ArtistAPhoto, ArtistAPhotoError, CanvasContextError, type CropOptions, ExportError, type ExportFormat, type ExportOptions, type FilterParams, type FilterType, ImageLoadError, type ImageMetadata, InvalidCropError, InvalidDimensionsError, type OperationType, type ResizeOptions, type TextOptions, type TextParams, WorkerPool, type WorkerResponse, type WorkerTask, createEditor };

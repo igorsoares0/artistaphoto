@@ -13,6 +13,8 @@ export type {
   AdjustmentParams,
   FilterParams,
   OperationType,
+  TextOptions,
+  TextParams,
 } from './types';
 
 // Export errors

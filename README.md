@@ -7,6 +7,7 @@ Um SDK TypeScript poderoso para edição de imagens no browser com suporte a fil
 ### Operações de Transformação
 - **Crop**: Recortar imagens com dimensões personalizadas
 - **Resize**: Redimensionar imagens com controle de qualidade
+- **Add Text**: Adicionar texto personalizado com fontes, cores, sombras e contornos
 
 ### 10 Filtros Disponíveis
 - **Grayscale**: Conversão para tons de cinza
@@ -89,6 +90,38 @@ editor.crop({ x: 0, y: 0, width: 300, height: 300 });
 
 // Resize
 editor.resize(800, 600, { quality: 'high', maintainAspectRatio: true });
+
+// Adicionar Texto Simples
+editor.addText({
+  text: 'Hello World',
+  x: 100,
+  y: 100,
+  fontSize: 32,
+  color: '#000000'
+});
+
+// Adicionar Texto com Estilos
+editor.addText({
+  text: 'ArtistAPhoto',
+  x: 200,
+  y: 150,
+  fontSize: 48,
+  fontFamily: 'Arial',
+  color: '#FF0000',
+  bold: true,
+  italic: false,
+  stroke: {
+    color: '#FFFFFF',
+    width: 2
+  },
+  shadow: {
+    color: 'rgba(0, 0, 0, 0.5)',
+    blur: 4,
+    offsetX: 2,
+    offsetY: 2
+  },
+  rotation: 15 // Rotação em graus
+});
 ```
 
 ### Aplicar Filtros
@@ -176,8 +209,22 @@ const result = await editor
   .temperature(15)
   .saturation(-10)
   .brightness(10)
+  .addText({
+    text: 'Vintage Photo',
+    x: 300,
+    y: 50,
+    fontSize: 36,
+    fontFamily: 'Georgia',
+    color: '#FFFFFF',
+    bold: true,
+    shadow: {
+      color: 'rgba(0, 0, 0, 0.7)',
+      blur: 6,
+      offsetX: 2,
+      offsetY: 2
+    }
+  })
   .filter('vignette', 0.6)
-  .sharpen(0.3)
   .resize(600, 600)
   .toCanvas();
 

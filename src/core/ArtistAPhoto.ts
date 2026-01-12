@@ -6,6 +6,7 @@ import { canvasToBlob, canvasToDataURL, downloadBlob } from '../utils/canvas';
 import { validateCropParams, validateDimensions } from '../utils/validators';
 import { CropOperation } from '../operations/crop/CropOperation';
 import { ResizeOperation } from '../operations/resize/ResizeOperation';
+import { TextOperation } from '../operations/text/TextOperation';
 import { GrayscaleFilter } from '../operations/filters/GrayscaleFilter';
 import { SepiaFilter } from '../operations/filters/SepiaFilter';
 import { BlurFilter } from '../operations/filters/BlurFilter';
@@ -27,6 +28,7 @@ import type {
   ResizeOptions,
   FilterType,
   ExportFormat,
+  TextOptions,
 } from '../types';
 
 export class ArtistAPhoto {
@@ -83,6 +85,12 @@ export class ArtistAPhoto {
   resize(width: number, height: number, options?: ResizeOptions): this {
     validateDimensions(width, height);
     const operation = new ResizeOperation(width, height, options);
+    this.operationQueue.enqueue(operation);
+    return this;
+  }
+
+  addText(options: TextOptions): this {
+    const operation = new TextOperation(options);
     this.operationQueue.enqueue(operation);
     return this;
   }
