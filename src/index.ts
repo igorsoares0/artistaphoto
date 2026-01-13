@@ -15,6 +15,9 @@ export type {
   OperationType,
   TextOptions,
   TextParams,
+  ShapeType,
+  ShapeOptions,
+  ShapeParams,
 } from './types';
 
 // Export errors

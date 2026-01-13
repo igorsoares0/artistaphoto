@@ -6,6 +6,9 @@ export type {
   ResizeParams,
   TextOptions,
   TextParams,
+  ShapeType,
+  ShapeOptions,
+  ShapeParams,
 } from './operations';
 
 export type {

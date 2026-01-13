@@ -1,4 +1,4 @@
-type OperationType = 'crop' | 'resize' | 'filter' | 'adjustment' | 'text';
+type OperationType = 'crop' | 'resize' | 'filter' | 'adjustment' | 'text' | 'shape';
 interface OperationParams {
     [key: string]: any;
 }
@@ -48,6 +48,27 @@ interface TextParams extends Required<Omit<TextOptions, 'stroke' | 'shadow'>> {
         offsetY: number;
     };
 }
+type ShapeType = 'rectangle' | 'ellipse';
+interface ShapeOptions {
+    type: ShapeType;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    fill?: string;
+    stroke?: {
+        color: string;
+        width: number;
+    };
+    rotation?: number;
+}
+interface ShapeParams extends Required<Omit<ShapeOptions, 'fill' | 'stroke'>> {
+    fill?: string;
+    stroke?: {
+        color: string;
+        width: number;
+    };
+}
 
 type FilterType = 'grayscale' | 'sepia' | 'blur' | 'sharpen' | 'vintage' | 'invert' | 'vignette' | 'posterize' | 'pixelate' | 'edgeDetection';
 interface FilterParams {
@@ -93,6 +114,7 @@ declare class ArtistAPhoto {
     crop(options: CropOptions): this;
     resize(width: number, height: number, options?: ResizeOptions): this;
     addText(options: TextOptions): this;
+    addShape(options: ShapeOptions): this;
     filter(type: FilterType, intensity?: number): this;
     brightness(value: number): this;
     contrast(value: number): this;
@@ -156,4 +178,4 @@ declare class WorkerPool {
 
 declare function createEditor(source: string | File | HTMLImageElement | HTMLCanvasElement): Promise<ArtistAPhoto>;
 
-export { type AdjustmentParams, type AdjustmentType, ArtistAPhoto, ArtistAPhotoError, CanvasContextError, type CropOptions, ExportError, type ExportFormat, type ExportOptions, type FilterParams, type FilterType, ImageLoadError, type ImageMetadata, InvalidCropError, InvalidDimensionsError, type OperationType, type ResizeOptions, type TextOptions, type TextParams, WorkerPool, type WorkerResponse, type WorkerTask, createEditor };
+export { type AdjustmentParams, type AdjustmentType, ArtistAPhoto, ArtistAPhotoError, CanvasContextError, type CropOptions, ExportError, type ExportFormat, type ExportOptions, type FilterParams, type FilterType, ImageLoadError, type ImageMetadata, InvalidCropError, InvalidDimensionsError, type OperationType, type ResizeOptions, type ShapeOptions, type ShapeParams, type ShapeType, type TextOptions, type TextParams, WorkerPool, type WorkerResponse, type WorkerTask, createEditor };

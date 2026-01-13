@@ -1,4 +1,4 @@
-export type OperationType = 'crop' | 'resize' | 'filter' | 'adjustment' | 'text';
+export type OperationType = 'crop' | 'resize' | 'filter' | 'adjustment' | 'text' | 'shape';
 
 export interface OperationParams {
   [key: string]: any;
@@ -58,5 +58,29 @@ export interface TextParams extends Required<Omit<TextOptions, 'stroke' | 'shado
     blur: number;
     offsetX: number;
     offsetY: number;
+  };
+}
+
+export type ShapeType = 'rectangle' | 'ellipse';
+
+export interface ShapeOptions {
+  type: ShapeType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fill?: string;
+  stroke?: {
+    color: string;
+    width: number;
+  };
+  rotation?: number;
+}
+
+export interface ShapeParams extends Required<Omit<ShapeOptions, 'fill' | 'stroke'>> {
+  fill?: string;
+  stroke?: {
+    color: string;
+    width: number;
   };
 }

@@ -8,6 +8,7 @@ Um SDK TypeScript poderoso para edição de imagens no browser com suporte a fil
 - **Crop**: Recortar imagens com dimensões personalizadas
 - **Resize**: Redimensionar imagens com controle de qualidade
 - **Add Text**: Adicionar texto personalizado com fontes, cores, sombras e contornos
+- **Add Shapes**: Adicionar formas geométricas (retângulo e elipse) com preenchimento e contorno
 
 ### 10 Filtros Disponíveis
 - **Grayscale**: Conversão para tons de cinza
@@ -121,6 +122,41 @@ editor.addText({
     offsetY: 2
   },
   rotation: 15 // Rotação em graus
+});
+
+// Adicionar Shape - Retângulo
+editor.addShape({
+  type: 'rectangle',
+  x: 50,
+  y: 50,
+  width: 200,
+  height: 100,
+  fill: '#FF0000'
+});
+
+// Adicionar Shape - Elipse com Contorno
+editor.addShape({
+  type: 'ellipse',
+  x: 100,
+  y: 100,
+  width: 150,
+  height: 150,
+  fill: '#00FF00',
+  stroke: {
+    color: '#000000',
+    width: 3
+  }
+});
+
+// Adicionar Shape com Rotação
+editor.addShape({
+  type: 'rectangle',
+  x: 200,
+  y: 150,
+  width: 100,
+  height: 50,
+  fill: '#0000FF',
+  rotation: 45 // Rotação em graus
 });
 ```
 

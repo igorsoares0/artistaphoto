@@ -7,6 +7,7 @@ import { validateCropParams, validateDimensions } from '../utils/validators';
 import { CropOperation } from '../operations/crop/CropOperation';
 import { ResizeOperation } from '../operations/resize/ResizeOperation';
 import { TextOperation } from '../operations/text/TextOperation';
+import { ShapeOperation } from '../operations/shape/ShapeOperation';
 import { GrayscaleFilter } from '../operations/filters/GrayscaleFilter';
 import { SepiaFilter } from '../operations/filters/SepiaFilter';
 import { BlurFilter } from '../operations/filters/BlurFilter';
@@ -29,6 +30,7 @@ import type {
   FilterType,
   ExportFormat,
   TextOptions,
+  ShapeOptions,
 } from '../types';
 
 export class ArtistAPhoto {
@@ -91,6 +93,12 @@ export class ArtistAPhoto {
 
   addText(options: TextOptions): this {
     const operation = new TextOperation(options);
+    this.operationQueue.enqueue(operation);
+    return this;
+  }
+
+  addShape(options: ShapeOptions): this {
+    const operation = new ShapeOperation(options);
     this.operationQueue.enqueue(operation);
     return this;
   }
