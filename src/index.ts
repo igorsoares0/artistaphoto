@@ -1,5 +1,5 @@
 // Main SDK class
-export { ArtistAPhoto } from './core/ArtistAPhoto';
+export { ArtistAPhoto, LicenseError } from './core/ArtistAPhoto';
 
 // Export all types
 export type {
@@ -18,6 +18,11 @@ export type {
   ShapeType,
   ShapeOptions,
   ShapeParams,
+  // License types
+  LicenseStatus,
+  LicenseInfo,
+  LicenseConfig,
+  LicenseValidationResult,
 } from './types';
 
 // Export errors

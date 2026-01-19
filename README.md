@@ -43,10 +43,74 @@ Um SDK TypeScript poderoso para edição de imagens no browser com suporte a fil
 npm install artistaphoto
 ```
 
+## Ativação de Licença
+
+O ArtistAPhoto SDK requer uma licença válida para funcionar. Após adquirir sua licença, ative-a antes de usar o SDK:
+
+```typescript
+import { ArtistAPhoto, LicenseError } from 'artistaphoto';
+
+// Ativar licença (faça isso uma vez quando seu app iniciar)
+try {
+  await ArtistAPhoto.setLicenseKey('APH-XXXX-XXXX-XXXX');
+  console.log('License activated successfully!');
+} catch (error) {
+  if (error instanceof LicenseError) {
+    console.error('License error:', error.code, error.message);
+  }
+}
+
+// Agora você pode usar o SDK normalmente
+const editor = await ArtistAPhoto.fromUrl('/image.jpg');
+```
+
+### Configuração (Opcional)
+
+```typescript
+// Configurar antes de ativar a licença
+ArtistAPhoto.configure({
+  storeUrl: 'https://yourstore.lemonsqueezy.com', // URL da sua loja
+  cacheDuration: 24 * 60 * 60 * 1000, // Cache por 24 horas
+  enableCache: true // Habilitar cache local
+});
+```
+
+### Usando Variáveis de Ambiente (Recomendado)
+
+```typescript
+// .env
+ARTISTAPHOTO_LICENSE_KEY=APH-XXXX-XXXX-XXXX
+
+// Seu código
+await ArtistAPhoto.setLicenseKey(process.env.ARTISTAPHOTO_LICENSE_KEY);
+```
+
+### Métodos de Licença Disponíveis
+
+```typescript
+// Verificar se a licença é válida
+if (ArtistAPhoto.isLicenseValid()) {
+  // SDK está pronto para uso
+}
+
+// Obter informações da licença
+const info = ArtistAPhoto.getLicenseInfo();
+console.log(info?.expiresAt, info?.activationUsage);
+
+// Forçar revalidação da licença
+await ArtistAPhoto.refreshLicense();
+
+// Limpar licença (logout)
+ArtistAPhoto.clearLicense();
+```
+
 ## Uso Básico
 
 ```typescript
 import { ArtistAPhoto } from 'artistaphoto';
+
+// Ativar licença primeiro
+await ArtistAPhoto.setLicenseKey('APH-XXXX-XXXX-XXXX');
 
 // Carregar imagem
 const editor = await ArtistAPhoto.fromUrl('/path/to/image.jpg');

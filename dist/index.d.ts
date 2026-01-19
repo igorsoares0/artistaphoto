@@ -94,6 +94,59 @@ interface ExportOptions {
     format?: ExportFormat;
     quality?: number;
 }
+type LicenseStatus = 'active' | 'expired' | 'disabled' | 'invalid';
+interface LicenseInfo {
+    key: string;
+    status: LicenseStatus;
+    isValid: boolean;
+    expiresAt: string | null;
+    activationLimit: number;
+    activationUsage: number;
+    customerEmail?: string;
+    customerName?: string;
+    productName?: string;
+}
+interface LicenseValidationResult {
+    valid: boolean;
+    error?: string;
+    license_key?: {
+        id: number;
+        status: string;
+        key: string;
+        activation_limit: number;
+        activation_usage: number;
+        created_at: string;
+        expires_at: string | null;
+    };
+    instance?: {
+        id: string;
+        name: string;
+        created_at: string;
+    };
+    meta?: {
+        store_id: number;
+        order_id: number;
+        product_name: string;
+        customer_email: string;
+        customer_name: string;
+    };
+}
+interface LicenseConfig {
+    /** Your Lemon Squeezy store URL for purchasing licenses */
+    storeUrl?: string;
+    /** Cache duration in milliseconds (default: 24 hours) */
+    cacheDuration?: number;
+    /** Enable offline mode with cached validation (default: true) */
+    enableCache?: boolean;
+}
+
+/**
+ * Custom error class for license-related errors
+ */
+declare class LicenseError extends Error {
+    code: string;
+    constructor(message: string, code: string);
+}
 
 interface Operation {
     readonly type: OperationType;
@@ -107,9 +160,86 @@ declare class ArtistAPhoto {
     private operationQueue;
     private processor;
     private constructor();
+    /**
+     * Configure the SDK license settings
+     * @param config - License configuration options
+     * @example
+     * ```typescript
+     * ArtistAPhoto.configure({
+     *   storeUrl: 'https://yourstore.lemonsqueezy.com',
+     *   cacheDuration: 24 * 60 * 60 * 1000, // 24 hours
+     *   enableCache: true
+     * });
+     * ```
+     */
+    static configure(config: Partial<LicenseConfig>): void;
+    /**
+     * Set and validate a license key
+     * Must be called before using any SDK functionality
+     * @param key - The license key from Lemon Squeezy
+     * @returns Promise<LicenseInfo> - Information about the validated license
+     * @throws LicenseError if the license is invalid, expired, or activation limit reached
+     * @example
+     * ```typescript
+     * try {
+     *   const licenseInfo = await ArtistAPhoto.setLicenseKey('APH-XXXX-XXXX-XXXX');
+     *   console.log('License activated:', licenseInfo.productName);
+     * } catch (error) {
+     *   if (error instanceof LicenseError) {
+     *     console.error('License error:', error.code, error.message);
+     *   }
+     * }
+     * ```
+     */
+    static setLicenseKey(key: string): Promise<LicenseInfo>;
+    /**
+     * Check if a valid license is currently active
+     * @returns boolean - true if a valid license is active
+     */
+    static isLicenseValid(): boolean;
+    /**
+     * Get information about the current license
+     * @returns LicenseInfo | null - License details or null if no license is set
+     */
+    static getLicenseInfo(): LicenseInfo | null;
+    /**
+     * Clear the current license (logout)
+     * Removes the license from memory and cache
+     */
+    static clearLicense(): void;
+    /**
+     * Force refresh the license validation
+     * Useful after renewal or to check for updates
+     * @returns Promise<LicenseInfo> - Updated license information
+     */
+    static refreshLicense(): Promise<LicenseInfo>;
+    /**
+     * Create an editor instance from an image URL
+     * @param url - The URL of the image to load
+     * @returns Promise<ArtistAPhoto> - Editor instance
+     * @throws LicenseError if no valid license is set
+     */
     static fromUrl(url: string): Promise<ArtistAPhoto>;
+    /**
+     * Create an editor instance from a File object
+     * @param file - The File object (from file input)
+     * @returns Promise<ArtistAPhoto> - Editor instance
+     * @throws LicenseError if no valid license is set
+     */
     static fromFile(file: File): Promise<ArtistAPhoto>;
+    /**
+     * Create an editor instance from an existing canvas
+     * @param canvas - The HTMLCanvasElement to use
+     * @returns Promise<ArtistAPhoto> - Editor instance
+     * @throws LicenseError if no valid license is set
+     */
     static fromCanvas(canvas: HTMLCanvasElement): Promise<ArtistAPhoto>;
+    /**
+     * Create an editor instance from an existing image element
+     * @param img - The HTMLImageElement to use
+     * @returns Promise<ArtistAPhoto> - Editor instance
+     * @throws LicenseError if no valid license is set
+     */
     static fromImageElement(img: HTMLImageElement): Promise<ArtistAPhoto>;
     crop(options: CropOptions): this;
     resize(width: number, height: number, options?: ResizeOptions): this;
@@ -178,4 +308,4 @@ declare class WorkerPool {
 
 declare function createEditor(source: string | File | HTMLImageElement | HTMLCanvasElement): Promise<ArtistAPhoto>;
 
-export { type AdjustmentParams, type AdjustmentType, ArtistAPhoto, ArtistAPhotoError, CanvasContextError, type CropOptions, ExportError, type ExportFormat, type ExportOptions, type FilterParams, type FilterType, ImageLoadError, type ImageMetadata, InvalidCropError, InvalidDimensionsError, type OperationType, type ResizeOptions, type ShapeOptions, type ShapeParams, type ShapeType, type TextOptions, type TextParams, WorkerPool, type WorkerResponse, type WorkerTask, createEditor };
+export { type AdjustmentParams, type AdjustmentType, ArtistAPhoto, ArtistAPhotoError, CanvasContextError, type CropOptions, ExportError, type ExportFormat, type ExportOptions, type FilterParams, type FilterType, ImageLoadError, type ImageMetadata, InvalidCropError, InvalidDimensionsError, type LicenseConfig, LicenseError, type LicenseInfo, type LicenseStatus, type LicenseValidationResult, type OperationType, type ResizeOptions, type ShapeOptions, type ShapeParams, type ShapeType, type TextOptions, type TextParams, WorkerPool, type WorkerResponse, type WorkerTask, createEditor };

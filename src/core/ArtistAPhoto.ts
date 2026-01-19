@@ -1,6 +1,7 @@
 import { ImageState } from './ImageState';
 import { OperationQueue } from './OperationQueue';
 import { ImageProcessor } from './ImageProcessor';
+import { LicenseManager, LicenseError } from './LicenseManager';
 import { loadImageFromUrl, loadImageFromFile, getImageData } from '../utils/imageLoader';
 import { canvasToBlob, canvasToDataURL, downloadBlob } from '../utils/canvas';
 import { validateCropParams, validateDimensions } from '../utils/validators';
@@ -31,7 +32,12 @@ import type {
   ExportFormat,
   TextOptions,
   ShapeOptions,
+  LicenseInfo,
+  LicenseConfig,
 } from '../types';
+
+// Re-export LicenseError for consumers
+export { LicenseError };
 
 export class ArtistAPhoto {
   private state: ImageState;
@@ -44,23 +50,117 @@ export class ArtistAPhoto {
     this.processor = new ImageProcessor();
   }
 
+  // ==================== License Management (Static Methods) ====================
+
+  /**
+   * Configure the SDK license settings
+   * @param config - License configuration options
+   * @example
+   * ```typescript
+   * ArtistAPhoto.configure({
+   *   storeUrl: 'https://yourstore.lemonsqueezy.com',
+   *   cacheDuration: 24 * 60 * 60 * 1000, // 24 hours
+   *   enableCache: true
+   * });
+   * ```
+   */
+  static configure(config: Partial<LicenseConfig>): void {
+    LicenseManager.configure(config);
+  }
+
+  /**
+   * Set and validate a license key
+   * Must be called before using any SDK functionality
+   * @param key - The license key from Lemon Squeezy
+   * @returns Promise<LicenseInfo> - Information about the validated license
+   * @throws LicenseError if the license is invalid, expired, or activation limit reached
+   * @example
+   * ```typescript
+   * try {
+   *   const licenseInfo = await ArtistAPhoto.setLicenseKey('APH-XXXX-XXXX-XXXX');
+   *   console.log('License activated:', licenseInfo.productName);
+   * } catch (error) {
+   *   if (error instanceof LicenseError) {
+   *     console.error('License error:', error.code, error.message);
+   *   }
+   * }
+   * ```
+   */
+  static async setLicenseKey(key: string): Promise<LicenseInfo> {
+    return LicenseManager.setLicenseKey(key);
+  }
+
+  /**
+   * Check if a valid license is currently active
+   * @returns boolean - true if a valid license is active
+   */
+  static isLicenseValid(): boolean {
+    return LicenseManager.isLicenseValid();
+  }
+
+  /**
+   * Get information about the current license
+   * @returns LicenseInfo | null - License details or null if no license is set
+   */
+  static getLicenseInfo(): LicenseInfo | null {
+    return LicenseManager.getLicenseInfo();
+  }
+
+  /**
+   * Clear the current license (logout)
+   * Removes the license from memory and cache
+   */
+  static clearLicense(): void {
+    LicenseManager.clearLicense();
+  }
+
+  /**
+   * Force refresh the license validation
+   * Useful after renewal or to check for updates
+   * @returns Promise<LicenseInfo> - Updated license information
+   */
+  static async refreshLicense(): Promise<LicenseInfo> {
+    return LicenseManager.refreshLicense();
+  }
+
   // ==================== Factory Methods ====================
 
+  /**
+   * Create an editor instance from an image URL
+   * @param url - The URL of the image to load
+   * @returns Promise<ArtistAPhoto> - Editor instance
+   * @throws LicenseError if no valid license is set
+   */
   static async fromUrl(url: string): Promise<ArtistAPhoto> {
+    LicenseManager.requireValidLicense();
     const img = await loadImageFromUrl(url);
     const imageData = getImageData(img);
     const state = new ImageState(img, imageData);
     return new ArtistAPhoto(state);
   }
 
+  /**
+   * Create an editor instance from a File object
+   * @param file - The File object (from file input)
+   * @returns Promise<ArtistAPhoto> - Editor instance
+   * @throws LicenseError if no valid license is set
+   */
   static async fromFile(file: File): Promise<ArtistAPhoto> {
+    LicenseManager.requireValidLicense();
     const img = await loadImageFromFile(file);
     const imageData = getImageData(img);
     const state = new ImageState(img, imageData);
     return new ArtistAPhoto(state);
   }
 
+  /**
+   * Create an editor instance from an existing canvas
+   * @param canvas - The HTMLCanvasElement to use
+   * @returns Promise<ArtistAPhoto> - Editor instance
+   * @throws LicenseError if no valid license is set
+   */
   static async fromCanvas(canvas: HTMLCanvasElement): Promise<ArtistAPhoto> {
+    LicenseManager.requireValidLicense();
     const img = new Image();
     img.src = canvas.toDataURL();
     await new Promise((resolve) => (img.onload = resolve));
@@ -69,7 +169,14 @@ export class ArtistAPhoto {
     return new ArtistAPhoto(state);
   }
 
+  /**
+   * Create an editor instance from an existing image element
+   * @param img - The HTMLImageElement to use
+   * @returns Promise<ArtistAPhoto> - Editor instance
+   * @throws LicenseError if no valid license is set
+   */
   static async fromImageElement(img: HTMLImageElement): Promise<ArtistAPhoto> {
+    LicenseManager.requireValidLicense();
     const imageData = getImageData(img);
     const state = new ImageState(img, imageData);
     return new ArtistAPhoto(state);
