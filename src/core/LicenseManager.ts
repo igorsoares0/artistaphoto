@@ -16,25 +16,26 @@ interface CachedLicense {
   expiresAt: number;
 }
 
-export class LicenseManager {
-  private static licenseKey: string | null = null;
-  private static licenseInfo: LicenseInfo | null = null;
-  private static isValidated: boolean = false;
-  private static devMode: boolean = false;
-  private static config: LicenseConfig = {
-    storeUrl: DEFAULT_STORE_URL,
-    cacheDuration: DEFAULT_CACHE_DURATION,
-    enableCache: true,
-  };
+// Use module-level variables instead of static class properties for better consistency
+let _licenseKey: string | null = null;
+let _licenseInfo: LicenseInfo | null = null;
+let _isValidated: boolean = false;
+let _devMode: boolean = false;
+let _config: LicenseConfig = {
+  storeUrl: DEFAULT_STORE_URL,
+  cacheDuration: DEFAULT_CACHE_DURATION,
+  enableCache: true,
+};
 
+export class LicenseManager {
   /**
    * Enable development mode (bypasses license validation)
    * Only use this for local development!
    */
   static enableDevMode(): void {
-    this.devMode = true;
-    this.isValidated = true;
-    this.licenseInfo = {
+    _devMode = true;
+    _isValidated = true;
+    _licenseInfo = {
       key: 'DEV-MODE',
       status: 'active',
       isValid: true,
@@ -45,21 +46,20 @@ export class LicenseManager {
       customerName: 'Development Mode',
       productName: 'ArtistAPhoto SDK (Dev)',
     };
-    console.log('🔧 ArtistAPhoto: Development mode enabled - license validation bypassed');
   }
 
   /**
    * Check if development mode is enabled
    */
   static isDevMode(): boolean {
-    return this.devMode;
+    return _devMode;
   }
 
   /**
    * Configure the license manager
    */
   static configure(config: Partial<LicenseConfig>): void {
-    this.config = { ...this.config, ...config };
+    _config = { ..._config, ...config };
   }
 
   /**
@@ -73,37 +73,37 @@ export class LicenseManager {
       throw new LicenseError('License key is required', 'INVALID_KEY');
     }
 
-    this.licenseKey = key.trim();
+    _licenseKey = key.trim();
 
     // Check cache first
-    if (this.config.enableCache) {
-      const cached = this.getFromCache();
-      if (cached && cached.licenseInfo.key === this.licenseKey) {
-        this.licenseInfo = cached.licenseInfo;
-        this.isValidated = true;
-        return this.licenseInfo;
+    if (_config.enableCache) {
+      const cached = LicenseManager.getFromCache();
+      if (cached && cached.licenseInfo.key === _licenseKey) {
+        _licenseInfo = cached.licenseInfo;
+        _isValidated = true;
+        return _licenseInfo;
       }
     }
 
     // Validate with Lemon Squeezy
-    const result = await this.validateWithLemonSqueezy(this.licenseKey);
+    const result = await LicenseManager.validateWithLemonSqueezy(_licenseKey);
 
     if (!result.valid) {
-      this.isValidated = false;
-      this.licenseInfo = null;
-      throw this.createErrorFromResult(result);
+      _isValidated = false;
+      _licenseInfo = null;
+      throw LicenseManager.createErrorFromResult(result);
     }
 
     // Parse license info
-    this.licenseInfo = this.parseLicenseInfo(this.licenseKey, result);
-    this.isValidated = true;
+    _licenseInfo = LicenseManager.parseLicenseInfo(_licenseKey, result);
+    _isValidated = true;
 
     // Cache the result
-    if (this.config.enableCache) {
-      this.saveToCache(this.licenseInfo);
+    if (_config.enableCache) {
+      LicenseManager.saveToCache(_licenseInfo);
     }
 
-    return this.licenseInfo;
+    return _licenseInfo;
   }
 
   /**
@@ -111,26 +111,24 @@ export class LicenseManager {
    */
   static isLicenseValid(): boolean {
     // Dev mode always valid
-    if (LicenseManager.devMode) {
+    if (_devMode) {
       return true;
     }
-    const valid = LicenseManager.isValidated && LicenseManager.licenseInfo !== null && LicenseManager.licenseInfo.isValid;
-    console.log('🔍 License check:', { devMode: LicenseManager.devMode, isValidated: LicenseManager.isValidated, licenseInfo: LicenseManager.licenseInfo, result: valid });
-    return valid;
+    return _isValidated && _licenseInfo !== null && _licenseInfo.isValid;
   }
 
   /**
    * Get current license information
    */
   static getLicenseInfo(): LicenseInfo | null {
-    return this.licenseInfo;
+    return _licenseInfo;
   }
 
   /**
    * Get the current license key
    */
   static getLicenseKey(): string | null {
-    return this.licenseKey;
+    return _licenseKey;
   }
 
   /**
@@ -139,11 +137,12 @@ export class LicenseManager {
    */
   static requireValidLicense(): void {
     // Dev mode always passes
-    if (LicenseManager.devMode) {
+    if (_devMode) {
       return;
     }
+
     if (!LicenseManager.isLicenseValid()) {
-      const storeUrl = LicenseManager.config.storeUrl || DEFAULT_STORE_URL;
+      const storeUrl = _config.storeUrl || DEFAULT_STORE_URL;
       throw new LicenseError(
         `License key required. Call ArtistAPhoto.setLicenseKey() first.\n` +
         `Purchase a license at: ${storeUrl}`,
@@ -156,29 +155,30 @@ export class LicenseManager {
    * Clear the current license (logout)
    */
   static clearLicense(): void {
-    this.licenseKey = null;
-    this.licenseInfo = null;
-    this.isValidated = false;
-    this.clearCache();
+    _licenseKey = null;
+    _licenseInfo = null;
+    _isValidated = false;
+    _devMode = false;
+    LicenseManager.clearCache();
   }
 
   /**
    * Refresh the license validation (force re-validation)
    */
   static async refreshLicense(): Promise<LicenseInfo> {
-    if (!this.licenseKey) {
+    if (!_licenseKey) {
       throw new LicenseError('No license key set', 'NO_LICENSE');
     }
 
-    this.clearCache();
-    return this.setLicenseKey(this.licenseKey);
+    LicenseManager.clearCache();
+    return LicenseManager.setLicenseKey(_licenseKey);
   }
 
   // ==================== Private Methods ====================
 
   private static async validateWithLemonSqueezy(key: string): Promise<LicenseValidationResult> {
     try {
-      const instanceName = this.getInstanceName();
+      const instanceName = LicenseManager.getInstanceName();
 
       const response = await fetch(`${LEMON_SQUEEZY_API_URL}/validate`, {
         method: 'POST',
@@ -203,8 +203,8 @@ export class LicenseManager {
       return data;
     } catch (error) {
       // If network error and we have cache, use cache
-      if (this.config.enableCache) {
-        const cached = this.getFromCache();
+      if (_config.enableCache) {
+        const cached = LicenseManager.getFromCache();
         if (cached && cached.licenseInfo.key === key) {
           return {
             valid: true,
@@ -241,8 +241,8 @@ export class LicenseManager {
     const licenseKey = result.license_key;
     const meta = result.meta;
 
-    let status: LicenseStatus = 'invalid';
-    if (licenseKey) {
+    let status: LicenseStatus = 'active'; // Default to active if API says valid
+    if (licenseKey?.status) {
       switch (licenseKey.status) {
         case 'active':
           status = 'active';
@@ -253,15 +253,21 @@ export class LicenseManager {
         case 'disabled':
           status = 'disabled';
           break;
+        case 'inactive':
+          status = 'active'; // Treat inactive as active for flexibility
+          break;
         default:
-          status = 'invalid';
+          status = 'active'; // Default to active if unknown status
       }
     }
 
+    // If API says valid, trust it
+    const isValid = result.valid === true;
+
     return {
       key,
-      status,
-      isValid: result.valid && status === 'active',
+      status: isValid ? 'active' : status,
+      isValid: isValid,
       expiresAt: licenseKey?.expires_at || null,
       activationLimit: licenseKey?.activation_limit || 0,
       activationUsage: licenseKey?.activation_usage || 0,
@@ -272,7 +278,7 @@ export class LicenseManager {
   }
 
   private static createErrorFromResult(result: LicenseValidationResult): LicenseError {
-    const storeUrl = this.config.storeUrl || DEFAULT_STORE_URL;
+    const storeUrl = _config.storeUrl || DEFAULT_STORE_URL;
 
     if (result.error?.includes('expired')) {
       return new LicenseError(
@@ -325,7 +331,7 @@ export class LicenseManager {
 
       // Check if cache is still valid
       if (Date.now() > parsed.expiresAt) {
-        this.clearCache();
+        LicenseManager.clearCache();
         return null;
       }
 
@@ -341,7 +347,7 @@ export class LicenseManager {
         return;
       }
 
-      const cacheDuration = this.config.cacheDuration || DEFAULT_CACHE_DURATION;
+      const cacheDuration = _config.cacheDuration || DEFAULT_CACHE_DURATION;
 
       const cached: CachedLicense = {
         licenseInfo,

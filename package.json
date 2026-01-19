@@ -1,7 +1,7 @@
 {
   "name": "artistaphoto",
   "version": "1.0.0",
-  "description": "SDK de editor de imagens para browser",
+  "description": "Professional image editor SDK for browser with filters, adjustments, crop, resize, text, shapes and more",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -14,14 +14,16 @@
     "./worker": "./dist/worker.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "image",
@@ -31,10 +33,24 @@
     "photo",
     "browser",
     "sdk",
-    "typescript"
+    "typescript",
+    "image-processing",
+    "photo-editor",
+    "crop",
+    "resize",
+    "filters",
+    "adjustments"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "ArtistAPhoto",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://artistaphoto.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/artistaphoto/artistaphoto-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/artistaphoto/artistaphoto-sdk/issues"
+  },
   "devDependencies": {
     "@vitest/ui": "^2.1.9",
     "jsdom": "^25.0.1",
