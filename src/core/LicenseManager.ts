@@ -20,11 +20,40 @@ export class LicenseManager {
   private static licenseKey: string | null = null;
   private static licenseInfo: LicenseInfo | null = null;
   private static isValidated: boolean = false;
+  private static devMode: boolean = false;
   private static config: LicenseConfig = {
     storeUrl: DEFAULT_STORE_URL,
     cacheDuration: DEFAULT_CACHE_DURATION,
     enableCache: true,
   };
+
+  /**
+   * Enable development mode (bypasses license validation)
+   * Only use this for local development!
+   */
+  static enableDevMode(): void {
+    this.devMode = true;
+    this.isValidated = true;
+    this.licenseInfo = {
+      key: 'DEV-MODE',
+      status: 'active',
+      isValid: true,
+      expiresAt: null,
+      activationLimit: 999,
+      activationUsage: 1,
+      customerEmail: 'dev@localhost',
+      customerName: 'Development Mode',
+      productName: 'ArtistAPhoto SDK (Dev)',
+    };
+    console.log('🔧 ArtistAPhoto: Development mode enabled - license validation bypassed');
+  }
+
+  /**
+   * Check if development mode is enabled
+   */
+  static isDevMode(): boolean {
+    return this.devMode;
+  }
 
   /**
    * Configure the license manager
@@ -81,7 +110,13 @@ export class LicenseManager {
    * Check if a valid license is active
    */
   static isLicenseValid(): boolean {
-    return this.isValidated && this.licenseInfo !== null && this.licenseInfo.isValid;
+    // Dev mode always valid
+    if (LicenseManager.devMode) {
+      return true;
+    }
+    const valid = LicenseManager.isValidated && LicenseManager.licenseInfo !== null && LicenseManager.licenseInfo.isValid;
+    console.log('🔍 License check:', { devMode: LicenseManager.devMode, isValidated: LicenseManager.isValidated, licenseInfo: LicenseManager.licenseInfo, result: valid });
+    return valid;
   }
 
   /**
@@ -103,8 +138,12 @@ export class LicenseManager {
    * Call this before any SDK operation
    */
   static requireValidLicense(): void {
-    if (!this.isLicenseValid()) {
-      const storeUrl = this.config.storeUrl || DEFAULT_STORE_URL;
+    // Dev mode always passes
+    if (LicenseManager.devMode) {
+      return;
+    }
+    if (!LicenseManager.isLicenseValid()) {
+      const storeUrl = LicenseManager.config.storeUrl || DEFAULT_STORE_URL;
       throw new LicenseError(
         `License key required. Call ArtistAPhoto.setLicenseKey() first.\n` +
         `Purchase a license at: ${storeUrl}`,

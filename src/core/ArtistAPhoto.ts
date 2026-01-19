@@ -123,6 +123,28 @@ export class ArtistAPhoto {
     return LicenseManager.refreshLicense();
   }
 
+  /**
+   * Enable development mode (bypasses license validation)
+   * Use this ONLY for local development and testing!
+   * @example
+   * ```typescript
+   * // At the start of your app (development only)
+   * if (process.env.NODE_ENV === 'development') {
+   *   ArtistAPhoto.enableDevMode();
+   * }
+   * ```
+   */
+  static enableDevMode(): void {
+    LicenseManager.enableDevMode();
+  }
+
+  /**
+   * Check if development mode is enabled
+   */
+  static isDevMode(): boolean {
+    return LicenseManager.isDevMode();
+  }
+
   // ==================== Factory Methods ====================
 
   /**

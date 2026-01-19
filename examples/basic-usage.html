@@ -168,7 +168,53 @@
 <body>
   <h1>🎨 ArtistAPhoto SDK - Demo</h1>
 
-  <div class="main-layout">
+  <!-- License Activation Section -->
+  <div id="licenseSection" class="container" style="max-width: 600px; margin: 0 auto 20px auto;">
+    <h2>🔑 Ativar Licença</h2>
+    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+      <input
+        type="text"
+        id="licenseKeyInput"
+        placeholder="Digite sua license key (ex: APH-XXXX-XXXX-XXXX)"
+        style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; font-family: monospace;"
+      >
+      <button
+        onclick="activateLicense()"
+        id="activateLicenseBtn"
+        style="padding: 12px 24px; font-size: 14px; white-space: nowrap;"
+      >
+        Ativar Licença
+      </button>
+    </div>
+    <div id="licenseStatus" style="padding: 10px; border-radius: 4px; display: none;"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+      <p style="font-size: 12px; color: #666; margin: 0;">
+        Não tem uma licença? <a href="https://artistaphoto.lemonsqueezy.com" target="_blank">Compre aqui</a>
+      </p>
+      <button
+        onclick="enableDevMode()"
+        style="background: #6c757d; padding: 6px 12px; font-size: 11px;"
+        title="Apenas para desenvolvimento local"
+      >
+        🔧 Modo Dev
+      </button>
+    </div>
+  </div>
+
+  <!-- License Valid Message -->
+  <div id="licenseValidMessage" class="container" style="max-width: 600px; margin: 0 auto 20px auto; display: none; background: #d4edda; border: 1px solid #c3e6cb;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <strong style="color: #155724;">✅ Licença Ativada</strong>
+        <span id="licenseInfoText" style="color: #155724; margin-left: 10px; font-size: 13px;"></span>
+      </div>
+      <button onclick="clearLicense()" style="background: #dc3545; padding: 6px 12px; font-size: 12px;">
+        Desativar
+      </button>
+    </div>
+  </div>
+
+  <div class="main-layout" id="editorSection" style="display: none;">
     <!-- Coluna de Controles (Esquerda) -->
     <div class="controls-column">
       <div class="container">
@@ -452,9 +498,145 @@
   </div>
 
   <script type="module">
-    import { ArtistAPhoto } from '../dist/index.mjs';
+    import { ArtistAPhoto, LicenseError } from '../dist/index.mjs';
 
     let editor = null;
+    let isLicenseActive = false;
+
+    // ==================== License Management ====================
+
+    // Verifica se já existe licença em cache ao carregar a página
+    async function checkExistingLicense() {
+      // Tenta recuperar licença do localStorage
+      const cachedLicense = localStorage.getItem('artistaphoto_license_cache');
+      if (cachedLicense) {
+        try {
+          const cached = JSON.parse(cachedLicense);
+          if (cached.expiresAt > Date.now()) {
+            // Tem cache válido, tenta usar a key salva
+            const savedKey = localStorage.getItem('artistaphoto_user_key');
+            if (savedKey) {
+              document.getElementById('licenseKeyInput').value = savedKey;
+              await activateLicense(true); // silencioso
+              return;
+            }
+          }
+        } catch (e) {
+          console.log('Cache inválido, necessário ativar licença');
+        }
+      }
+    }
+
+    // Ativa a licença
+    window.activateLicense = async function(silent = false) {
+      const input = document.getElementById('licenseKeyInput');
+      const key = input.value.trim();
+      const statusDiv = document.getElementById('licenseStatus');
+      const btn = document.getElementById('activateLicenseBtn');
+
+      if (!key) {
+        if (!silent) {
+          statusDiv.style.display = 'block';
+          statusDiv.style.background = '#fff3cd';
+          statusDiv.style.color = '#856404';
+          statusDiv.textContent = '⚠️ Por favor, insira uma license key';
+        }
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Validando...';
+      statusDiv.style.display = 'none';
+
+      try {
+        const licenseInfo = await ArtistAPhoto.setLicenseKey(key);
+
+        // Salva a key do usuário para recuperar depois
+        localStorage.setItem('artistaphoto_user_key', key);
+
+        // Sucesso!
+        isLicenseActive = true;
+        showLicenseSuccess(licenseInfo);
+
+      } catch (error) {
+        if (!silent) {
+          statusDiv.style.display = 'block';
+          statusDiv.style.background = '#f8d7da';
+          statusDiv.style.color = '#721c24';
+
+          if (error instanceof LicenseError) {
+            statusDiv.innerHTML = `❌ <strong>${error.code}</strong><br>${error.message.replace(/\n/g, '<br>')}`;
+          } else {
+            statusDiv.textContent = `❌ Erro: ${error.message}`;
+          }
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Ativar Licença';
+      }
+    };
+
+    // Mostra sucesso da licença
+    function showLicenseSuccess(licenseInfo) {
+      // Esconde seção de input
+      document.getElementById('licenseSection').style.display = 'none';
+
+      // Mostra mensagem de sucesso
+      const validMessage = document.getElementById('licenseValidMessage');
+      validMessage.style.display = 'block';
+
+      // Mostra info da licença
+      const infoText = document.getElementById('licenseInfoText');
+      if (licenseInfo.expiresAt) {
+        const expiresDate = new Date(licenseInfo.expiresAt).toLocaleDateString('pt-BR');
+        infoText.textContent = `Expira em: ${expiresDate}`;
+      }
+
+      // Mostra o editor
+      document.getElementById('editorSection').style.display = 'grid';
+    }
+
+    // Limpa a licença
+    window.clearLicense = function() {
+      ArtistAPhoto.clearLicense();
+      localStorage.removeItem('artistaphoto_user_key');
+      isLicenseActive = false;
+
+      // Mostra seção de input novamente
+      document.getElementById('licenseSection').style.display = 'block';
+      document.getElementById('licenseValidMessage').style.display = 'none';
+      document.getElementById('editorSection').style.display = 'none';
+
+      // Limpa input
+      document.getElementById('licenseKeyInput').value = '';
+      document.getElementById('activateLicenseBtn').disabled = false;
+      document.getElementById('activateLicenseBtn').textContent = 'Ativar Licença';
+
+      // Limpa editor
+      editor = null;
+    };
+
+    // Ativa modo de desenvolvimento (sem validação de licença)
+    window.enableDevMode = function() {
+      ArtistAPhoto.enableDevMode();
+      isLicenseActive = true;
+
+      const licenseInfo = ArtistAPhoto.getLicenseInfo();
+      showLicenseSuccess(licenseInfo);
+
+      // Muda a mensagem para indicar modo dev
+      document.getElementById('licenseValidMessage').style.background = '#fff3cd';
+      document.getElementById('licenseValidMessage').style.borderColor = '#ffc107';
+      document.querySelector('#licenseValidMessage strong').textContent = '🔧 Modo Desenvolvimento';
+      document.querySelector('#licenseValidMessage strong').style.color = '#856404';
+      document.getElementById('licenseInfoText').textContent = 'Validação de licença desativada';
+      document.getElementById('licenseInfoText').style.color = '#856404';
+    };
+
+    // Verifica licença ao carregar a página
+    checkExistingLicense();
+
+    // ==================== Canvas Functions ====================
 
     // Cria estrutura de canvas
     function createCanvasStructure() {
