@@ -94,45 +94,51 @@ interface ExportOptions {
     format?: ExportFormat;
     quality?: number;
 }
-type LicenseStatus = 'active' | 'expired' | 'disabled' | 'invalid';
+type LicenseStatus = 'active' | 'expired' | 'disabled' | 'invalid' | 'granted' | 'revoked';
 interface LicenseInfo {
     key: string;
     status: LicenseStatus;
     isValid: boolean;
     expiresAt: string | null;
-    activationLimit: number;
+    activationLimit: number | null;
     activationUsage: number;
+    usageLimit: number | null;
+    usage: number;
     customerEmail?: string;
     customerName?: string;
     productName?: string;
 }
+interface PolarLicenseKeyResponse {
+    id: string;
+    organization_id: string;
+    customer_id: string;
+    customer?: {
+        id: string;
+        email: string;
+        name?: string;
+    };
+    benefit_id: string;
+    key: string;
+    display_key: string;
+    status: 'granted' | 'revoked' | 'disabled';
+    limit_activations: number | null;
+    usage: number;
+    limit_usage: number | null;
+    validations: number;
+    last_validated_at: string | null;
+    expires_at: string | null;
+    created_at: string;
+    modified_at: string;
+}
 interface LicenseValidationResult {
     valid: boolean;
     error?: string;
-    license_key?: {
-        id: number;
-        status: string;
-        key: string;
-        activation_limit: number;
-        activation_usage: number;
-        created_at: string;
-        expires_at: string | null;
-    };
-    instance?: {
-        id: string;
-        name: string;
-        created_at: string;
-    };
-    meta?: {
-        store_id: number;
-        order_id: number;
-        product_name: string;
-        customer_email: string;
-        customer_name: string;
-    };
+    polarResponse?: PolarLicenseKeyResponse;
 }
 interface LicenseConfig {
-    /** Your Lemon Squeezy store URL for purchasing licenses */
+    /** Your Polar.sh organization ID (optional - already configured in SDK) */
+    organizationId?: string;
+    /** Your store URL for purchasing licenses */
     storeUrl?: string;
     /** Cache duration in milliseconds (default: 24 hours) */
     cacheDuration?: number;

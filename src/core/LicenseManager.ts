@@ -3,12 +3,16 @@ import type {
   LicenseValidationResult,
   LicenseConfig,
   LicenseStatus,
+  PolarLicenseKeyResponse,
 } from '../types';
 
 const CACHE_KEY = 'artistaphoto_license_cache';
 const DEFAULT_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const DEFAULT_STORE_URL = 'https://artistaphoto.lemonsqueezy.com';
-const LEMON_SQUEEZY_API_URL = 'https://api.lemonsqueezy.com/v1/licenses';
+const DEFAULT_STORE_URL = 'https://polar.sh/artistaphoto';
+const POLAR_API_URL = 'https://api.polar.sh/v1/customer-portal/license-keys';
+
+// Your Polar.sh Organization ID (replace with your actual org ID from Polar.sh dashboard)
+const POLAR_ORGANIZATION_ID = '752cf07e-872c-4678-91a6-a1883aadee6d';
 
 interface CachedLicense {
   licenseInfo: LicenseInfo;
@@ -22,6 +26,7 @@ let _licenseInfo: LicenseInfo | null = null;
 let _isValidated: boolean = false;
 let _devMode: boolean = false;
 let _config: LicenseConfig = {
+  organizationId: POLAR_ORGANIZATION_ID,
   storeUrl: DEFAULT_STORE_URL,
   cacheDuration: DEFAULT_CACHE_DURATION,
   enableCache: true,
@@ -42,6 +47,8 @@ export class LicenseManager {
       expiresAt: null,
       activationLimit: 999,
       activationUsage: 1,
+      usageLimit: null,
+      usage: 0,
       customerEmail: 'dev@localhost',
       customerName: 'Development Mode',
       productName: 'ArtistAPhoto SDK (Dev)',
@@ -57,6 +64,7 @@ export class LicenseManager {
 
   /**
    * Configure the license manager
+   * @param config - Configuration options including organizationId (required for validation)
    */
   static configure(config: Partial<LicenseConfig>): void {
     _config = { ..._config, ...config };
@@ -64,7 +72,7 @@ export class LicenseManager {
 
   /**
    * Set and validate a license key
-   * @param key - The license key from Lemon Squeezy
+   * @param key - The license key from Polar.sh
    * @returns Promise<LicenseInfo> - Information about the validated license
    * @throws Error if license is invalid
    */
@@ -85,8 +93,8 @@ export class LicenseManager {
       }
     }
 
-    // Validate with Lemon Squeezy
-    const result = await LicenseManager.validateWithLemonSqueezy(_licenseKey);
+    // Validate with Polar.sh
+    const result = await LicenseManager.validateWithPolar(_licenseKey);
 
     if (!result.valid) {
       _isValidated = false;
@@ -176,21 +184,33 @@ export class LicenseManager {
 
   // ==================== Private Methods ====================
 
-  private static async validateWithLemonSqueezy(key: string): Promise<LicenseValidationResult> {
+  private static async validateWithPolar(key: string): Promise<LicenseValidationResult> {
     try {
-      const instanceName = LicenseManager.getInstanceName();
-
-      const response = await fetch(`${LEMON_SQUEEZY_API_URL}/validate`, {
+      const response = await fetch(`${POLAR_API_URL}/validate`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          license_key: key,
-          instance_name: instanceName,
+          key: key,
+          organization_id: _config.organizationId,
         }),
       });
+
+      if (response.status === 404) {
+        return {
+          valid: false,
+          error: 'License key not found',
+        };
+      }
+
+      if (response.status === 422) {
+        return {
+          valid: false,
+          error: 'Invalid license key format',
+        };
+      }
 
       if (!response.ok) {
         return {
@@ -199,8 +219,17 @@ export class LicenseManager {
         };
       }
 
-      const data: LicenseValidationResult = await response.json();
-      return data;
+      const data: PolarLicenseKeyResponse = await response.json();
+
+      // Check if license is valid (status is "granted" and not expired)
+      const isExpired = data.expires_at ? new Date(data.expires_at) < new Date() : false;
+      const isValid = data.status === 'granted' && !isExpired;
+
+      return {
+        valid: isValid,
+        polarResponse: data,
+        error: !isValid ? LicenseManager.getErrorMessage(data, isExpired) : undefined,
+      };
     } catch (error) {
       // If network error and we have cache, use cache
       if (_config.enableCache) {
@@ -208,15 +237,7 @@ export class LicenseManager {
         if (cached && cached.licenseInfo.key === key) {
           return {
             valid: true,
-            license_key: {
-              id: 0,
-              status: cached.licenseInfo.status,
-              key: cached.licenseInfo.key,
-              activation_limit: cached.licenseInfo.activationLimit,
-              activation_usage: cached.licenseInfo.activationUsage,
-              created_at: '',
-              expires_at: cached.licenseInfo.expiresAt,
-            },
+            polarResponse: undefined,
           };
         }
       }
@@ -228,52 +249,65 @@ export class LicenseManager {
     }
   }
 
-  private static getInstanceName(): string {
-    // In browser, use hostname
-    if (typeof window !== 'undefined' && window.location) {
-      return window.location.hostname;
+  private static getErrorMessage(data: PolarLicenseKeyResponse, isExpired: boolean): string {
+    if (isExpired) {
+      return 'License has expired';
     }
-    // In Node.js, use a generic identifier
-    return 'nodejs-server';
+    if (data.status === 'revoked') {
+      return 'License has been revoked';
+    }
+    if (data.status === 'disabled') {
+      return 'License has been disabled';
+    }
+    return 'License is not valid';
   }
 
   private static parseLicenseInfo(key: string, result: LicenseValidationResult): LicenseInfo {
-    const licenseKey = result.license_key;
-    const meta = result.meta;
+    const polar = result.polarResponse;
 
-    let status: LicenseStatus = 'active'; // Default to active if API says valid
-    if (licenseKey?.status) {
-      switch (licenseKey.status) {
-        case 'active':
-          status = 'active';
-          break;
-        case 'expired':
-          status = 'expired';
-          break;
-        case 'disabled':
-          status = 'disabled';
-          break;
-        case 'inactive':
-          status = 'active'; // Treat inactive as active for flexibility
-          break;
-        default:
-          status = 'active'; // Default to active if unknown status
-      }
+    if (!polar) {
+      // Fallback for cached response without polarResponse
+      return {
+        key,
+        status: 'active',
+        isValid: true,
+        expiresAt: null,
+        activationLimit: null,
+        activationUsage: 0,
+        usageLimit: null,
+        usage: 0,
+      };
     }
 
-    // If API says valid, trust it
+    let status: LicenseStatus = 'active';
+    if (polar.status === 'granted') {
+      status = 'active';
+    } else if (polar.status === 'revoked') {
+      status = 'revoked';
+    } else if (polar.status === 'disabled') {
+      status = 'disabled';
+    }
+
+    // Check expiration
+    const isExpired = polar.expires_at ? new Date(polar.expires_at) < new Date() : false;
+    if (isExpired) {
+      status = 'expired';
+    }
+
     const isValid = result.valid === true;
 
     return {
       key,
       status: isValid ? 'active' : status,
       isValid: isValid,
-      expiresAt: licenseKey?.expires_at || null,
-      activationLimit: licenseKey?.activation_limit || 0,
-      activationUsage: licenseKey?.activation_usage || 0,
-      customerEmail: meta?.customer_email,
-      customerName: meta?.customer_name,
-      productName: meta?.product_name,
+      expiresAt: polar.expires_at,
+      activationLimit: polar.limit_activations,
+      activationUsage: polar.validations || 0,
+      usageLimit: polar.limit_usage,
+      usage: polar.usage || 0,
+      customerEmail: polar.customer?.email,
+      customerName: polar.customer?.name,
+      productName: undefined, // Polar doesn't include product name in validation response
     };
   }
 
@@ -289,13 +323,11 @@ export class LicenseManager {
       );
     }
 
-    if (result.error?.includes('Activation limit')) {
-      const limit = result.license_key?.activation_limit || 'N/A';
+    if (result.error?.includes('revoked')) {
       return new LicenseError(
-        `Activation limit reached (${limit} sites maximum).\n` +
-        `Manage activations at: https://app.lemonsqueezy.com\n` +
-        `Need more? Upgrade at ${storeUrl}`,
-        'ACTIVATION_LIMIT'
+        `This license has been revoked.\n` +
+        `Contact support for assistance.`,
+        'LICENSE_REVOKED'
       );
     }
 
@@ -304,6 +336,14 @@ export class LicenseManager {
         `This license has been disabled.\n` +
         `Contact support for assistance.`,
         'LICENSE_DISABLED'
+      );
+    }
+
+    if (result.error?.includes('not found')) {
+      return new LicenseError(
+        `License key not found.\n` +
+        `Purchase a valid license at: ${storeUrl}`,
+        'INVALID_KEY'
       );
     }
 

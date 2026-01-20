@@ -45,14 +45,14 @@ npm install artistaphoto
 
 ## Ativação de Licença
 
-O ArtistAPhoto SDK requer uma licença válida para funcionar. Após adquirir sua licença, ative-a antes de usar o SDK:
+O ArtistAPhoto SDK requer uma licença válida para funcionar. Você pode adquirir uma licença em [polar.sh/artistaphoto](https://polar.sh/artistaphoto).
 
 ```typescript
 import { ArtistAPhoto, LicenseError } from 'artistaphoto';
 
 // Ativar licença (faça isso uma vez quando seu app iniciar)
 try {
-  await ArtistAPhoto.setLicenseKey('APH-XXXX-XXXX-XXXX');
+  await ArtistAPhoto.setLicenseKey('SUA-LICENSE-KEY-AQUI');
   console.log('License activated successfully!');
 } catch (error) {
   if (error instanceof LicenseError) {
@@ -64,25 +64,24 @@ try {
 const editor = await ArtistAPhoto.fromUrl('/image.jpg');
 ```
 
-### Configuração (Opcional)
-
-```typescript
-// Configurar antes de ativar a licença
-ArtistAPhoto.configure({
-  storeUrl: 'https://yourstore.lemonsqueezy.com', // URL da sua loja
-  cacheDuration: 24 * 60 * 60 * 1000, // Cache por 24 horas
-  enableCache: true // Habilitar cache local
-});
-```
-
 ### Usando Variáveis de Ambiente (Recomendado)
 
 ```typescript
 // .env
-ARTISTAPHOTO_LICENSE_KEY=APH-XXXX-XXXX-XXXX
+ARTISTAPHOTO_LICENSE_KEY=SUA-LICENSE-KEY-AQUI
 
 // Seu código
 await ArtistAPhoto.setLicenseKey(process.env.ARTISTAPHOTO_LICENSE_KEY);
+```
+
+### Configuração Opcional
+
+```typescript
+// Opcionalmente, você pode configurar cache e outras opções
+ArtistAPhoto.configure({
+  cacheDuration: 24 * 60 * 60 * 1000, // Cache por 24 horas (padrão)
+  enableCache: true                    // Habilitar cache local (padrão)
+});
 ```
 
 ### Métodos de Licença Disponíveis
@@ -110,7 +109,7 @@ ArtistAPhoto.clearLicense();
 import { ArtistAPhoto } from 'artistaphoto';
 
 // Ativar licença primeiro
-await ArtistAPhoto.setLicenseKey('APH-XXXX-XXXX-XXXX');
+await ArtistAPhoto.setLicenseKey('SUA-LICENSE-KEY-AQUI');
 
 // Carregar imagem
 const editor = await ArtistAPhoto.fromUrl('/path/to/image.jpg');
@@ -458,7 +457,9 @@ dist/
 
 ## Licença
 
-MIT
+Commercial License - See [LICENSE](./LICENSE) for details.
+
+Purchase at [polar.sh/artistaphoto](https://polar.sh/artistaphoto)
 
 ## Suporte a Navegadores
 
