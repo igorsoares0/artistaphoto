@@ -24,7 +24,6 @@ interface CachedLicense {
 let _licenseKey: string | null = null;
 let _licenseInfo: LicenseInfo | null = null;
 let _isValidated: boolean = false;
-let _devMode: boolean = false;
 let _config: LicenseConfig = {
   organizationId: POLAR_ORGANIZATION_ID,
   storeUrl: DEFAULT_STORE_URL,
@@ -33,35 +32,6 @@ let _config: LicenseConfig = {
 };
 
 export class LicenseManager {
-  /**
-   * Enable development mode (bypasses license validation)
-   * Only use this for local development!
-   */
-  static enableDevMode(): void {
-    _devMode = true;
-    _isValidated = true;
-    _licenseInfo = {
-      key: 'DEV-MODE',
-      status: 'active',
-      isValid: true,
-      expiresAt: null,
-      activationLimit: 999,
-      activationUsage: 1,
-      usageLimit: null,
-      usage: 0,
-      customerEmail: 'dev@localhost',
-      customerName: 'Development Mode',
-      productName: 'ArtistAPhoto SDK (Dev)',
-    };
-  }
-
-  /**
-   * Check if development mode is enabled
-   */
-  static isDevMode(): boolean {
-    return _devMode;
-  }
-
   /**
    * Configure the license manager
    * @param config - Configuration options including organizationId (required for validation)
@@ -118,10 +88,6 @@ export class LicenseManager {
    * Check if a valid license is active
    */
   static isLicenseValid(): boolean {
-    // Dev mode always valid
-    if (_devMode) {
-      return true;
-    }
     return _isValidated && _licenseInfo !== null && _licenseInfo.isValid;
   }
 
@@ -144,11 +110,6 @@ export class LicenseManager {
    * Call this before any SDK operation
    */
   static requireValidLicense(): void {
-    // Dev mode always passes
-    if (_devMode) {
-      return;
-    }
-
     if (!LicenseManager.isLicenseValid()) {
       const storeUrl = _config.storeUrl || DEFAULT_STORE_URL;
       throw new LicenseError(
@@ -166,7 +127,6 @@ export class LicenseManager {
     _licenseKey = null;
     _licenseInfo = null;
     _isValidated = false;
-    _devMode = false;
     LicenseManager.clearCache();
   }
 

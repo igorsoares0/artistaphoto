@@ -192,13 +192,6 @@
         >
           Ativar
         </button>
-        <button
-          onclick="enableDevMode()"
-          style="background: #6c757d; padding: 8px 12px; font-size: 12px;"
-          title="Apenas para desenvolvimento local"
-        >
-          🔧 Dev
-        </button>
       </div>
     </div>
     <div id="licenseStatus" style="padding: 10px; border-radius: 4px; display: none; margin-top: 10px;"></div>
@@ -611,23 +604,6 @@
       document.getElementById('licenseKeyInput').value = '';
       document.getElementById('activateLicenseBtn').disabled = false;
       document.getElementById('activateLicenseBtn').textContent = 'Ativar';
-    };
-
-    // Ativa modo de desenvolvimento (sem validação de licença)
-    window.enableDevMode = function() {
-      ArtistAPhoto.enableDevMode();
-      isLicenseActive = true;
-
-      const licenseInfo = ArtistAPhoto.getLicenseInfo();
-      showLicenseSuccess(licenseInfo);
-
-      // Muda a mensagem para indicar modo dev
-      document.getElementById('licenseValidMessage').style.background = '#fff3cd';
-      document.getElementById('licenseValidMessage').style.borderColor = '#ffc107';
-      document.querySelector('#licenseValidMessage strong').textContent = '🔧 Modo Desenvolvimento';
-      document.querySelector('#licenseValidMessage strong').style.color = '#856404';
-      document.getElementById('licenseInfoText').textContent = 'Validação de licença desativada';
-      document.getElementById('licenseInfoText').style.color = '#856404';
     };
 
     // Verifica licença ao carregar a página
