@@ -3,7 +3,7 @@ import { OperationQueue } from './OperationQueue';
 import { ImageProcessor } from './ImageProcessor';
 import { LicenseManager, LicenseError } from './LicenseManager';
 import { loadImageFromUrl, loadImageFromFile, getImageData } from '../utils/imageLoader';
-import { canvasToBlob, canvasToDataURL, downloadBlob } from '../utils/canvas';
+import { canvasToBlob, canvasToDataURL, downloadBlob, applyWatermark } from '../utils/canvas';
 import { validateCropParams, validateDimensions } from '../utils/validators';
 import { CropOperation } from '../operations/crop/CropOperation';
 import { ResizeOperation } from '../operations/resize/ResizeOperation';
@@ -154,7 +154,6 @@ export class ArtistAPhoto {
    * @throws LicenseError if no valid license is set
    */
   static async fromUrl(url: string): Promise<ArtistAPhoto> {
-    LicenseManager.requireValidLicense();
     const img = await loadImageFromUrl(url);
     const imageData = getImageData(img);
     const state = new ImageState(img, imageData);
@@ -168,7 +167,6 @@ export class ArtistAPhoto {
    * @throws LicenseError if no valid license is set
    */
   static async fromFile(file: File): Promise<ArtistAPhoto> {
-    LicenseManager.requireValidLicense();
     const img = await loadImageFromFile(file);
     const imageData = getImageData(img);
     const state = new ImageState(img, imageData);
@@ -182,7 +180,6 @@ export class ArtistAPhoto {
    * @throws LicenseError if no valid license is set
    */
   static async fromCanvas(canvas: HTMLCanvasElement): Promise<ArtistAPhoto> {
-    LicenseManager.requireValidLicense();
     const img = new Image();
     img.src = canvas.toDataURL();
     await new Promise((resolve) => (img.onload = resolve));
@@ -198,7 +195,6 @@ export class ArtistAPhoto {
    * @throws LicenseError if no valid license is set
    */
   static async fromImageElement(img: HTMLImageElement): Promise<ArtistAPhoto> {
-    LicenseManager.requireValidLicense();
     const imageData = getImageData(img);
     const state = new ImageState(img, imageData);
     return new ArtistAPhoto(state);
@@ -354,11 +350,17 @@ export class ArtistAPhoto {
 
   async toBlob(format?: ExportFormat, quality?: number): Promise<Blob> {
     const canvas = await this.toCanvas();
+    if (!LicenseManager.isLicenseValid()) {
+      applyWatermark(canvas);
+    }
     return await canvasToBlob(canvas, format, quality);
   }
 
   async toDataURL(format?: ExportFormat, quality?: number): Promise<string> {
     const canvas = await this.toCanvas();
+    if (!LicenseManager.isLicenseValid()) {
+      applyWatermark(canvas);
+    }
     return canvasToDataURL(canvas, format, quality);
   }
 

@@ -169,36 +169,39 @@
   <h1>🎨 ArtistAPhoto SDK - Demo</h1>
 
   <!-- License Activation Section -->
-  <div id="licenseSection" class="container" style="max-width: 600px; margin: 0 auto 20px auto;">
-    <h2>🔑 Ativar Licença</h2>
-    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-      <input
-        type="text"
-        id="licenseKeyInput"
-        placeholder="Digite sua license key (ex: APH-XXXX-XXXX-XXXX)"
-        style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; font-family: monospace;"
-      >
-      <button
-        onclick="activateLicense()"
-        id="activateLicenseBtn"
-        style="padding: 12px 24px; font-size: 14px; white-space: nowrap;"
-      >
-        Ativar Licença
-      </button>
+  <div id="licenseSection" class="container" style="max-width: 1400px; margin: 0 auto 20px auto; background: #fff3cd; border: 1px solid #ffc107;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 20px;">⚠️</span>
+        <span style="color: #856404; font-size: 14px;">
+          <strong>Modo Trial:</strong> Exportações terão watermark.
+          <a href="https://polar.sh/artistaphoto" target="_blank" style="color: #856404;">Compre uma licença</a> para remover.
+        </span>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input
+          type="text"
+          id="licenseKeyInput"
+          placeholder="License key"
+          style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; font-family: monospace; width: 200px;"
+        >
+        <button
+          onclick="activateLicense()"
+          id="activateLicenseBtn"
+          style="padding: 8px 16px; font-size: 13px; white-space: nowrap;"
+        >
+          Ativar
+        </button>
+        <button
+          onclick="enableDevMode()"
+          style="background: #6c757d; padding: 8px 12px; font-size: 12px;"
+          title="Apenas para desenvolvimento local"
+        >
+          🔧 Dev
+        </button>
+      </div>
     </div>
-    <div id="licenseStatus" style="padding: 10px; border-radius: 4px; display: none;"></div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-      <p style="font-size: 12px; color: #666; margin: 0;">
-        Não tem uma licença? <a href="https://polar.sh/artistaphoto" target="_blank">Compre aqui</a>
-      </p>
-      <button
-        onclick="enableDevMode()"
-        style="background: #6c757d; padding: 6px 12px; font-size: 11px;"
-        title="Apenas para desenvolvimento local"
-      >
-        🔧 Modo Dev
-      </button>
-    </div>
+    <div id="licenseStatus" style="padding: 10px; border-radius: 4px; display: none; margin-top: 10px;"></div>
   </div>
 
   <!-- License Valid Message -->
@@ -214,7 +217,7 @@
     </div>
   </div>
 
-  <div class="main-layout" id="editorSection" style="display: none;">
+  <div class="main-layout" id="editorSection">
     <!-- Coluna de Controles (Esquerda) -->
     <div class="controls-column">
       <div class="container">
@@ -545,7 +548,7 @@
       }
 
       btn.disabled = true;
-      btn.textContent = 'Validando...';
+      btn.textContent = '...';
       statusDiv.style.display = 'none';
 
       try {
@@ -572,7 +575,7 @@
         }
 
         btn.disabled = false;
-        btn.textContent = 'Ativar Licença';
+        btn.textContent = 'Ativar';
       }
     };
 
@@ -584,6 +587,7 @@
       // Mostra mensagem de sucesso
       const validMessage = document.getElementById('licenseValidMessage');
       validMessage.style.display = 'block';
+      validMessage.style.maxWidth = '1400px';
 
       // Mostra info da licença
       const infoText = document.getElementById('licenseInfoText');
@@ -591,9 +595,6 @@
         const expiresDate = new Date(licenseInfo.expiresAt).toLocaleDateString('pt-BR');
         infoText.textContent = `Expira em: ${expiresDate}`;
       }
-
-      // Mostra o editor
-      document.getElementById('editorSection').style.display = 'grid';
     }
 
     // Limpa a licença
@@ -602,18 +603,14 @@
       localStorage.removeItem('artistaphoto_user_key');
       isLicenseActive = false;
 
-      // Mostra seção de input novamente
+      // Mostra seção de input novamente (banner de trial)
       document.getElementById('licenseSection').style.display = 'block';
       document.getElementById('licenseValidMessage').style.display = 'none';
-      document.getElementById('editorSection').style.display = 'none';
 
       // Limpa input
       document.getElementById('licenseKeyInput').value = '';
       document.getElementById('activateLicenseBtn').disabled = false;
-      document.getElementById('activateLicenseBtn').textContent = 'Ativar Licença';
-
-      // Limpa editor
-      editor = null;
+      document.getElementById('activateLicenseBtn').textContent = 'Ativar';
     };
 
     // Ativa modo de desenvolvimento (sem validação de licença)
