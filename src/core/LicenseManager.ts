@@ -3,16 +3,19 @@ import type {
   LicenseValidationResult,
   LicenseConfig,
   LicenseStatus,
-  PolarLicenseKeyResponse,
 } from '../types';
 
 const CACHE_KEY = 'artistaphoto_license_cache';
 const DEFAULT_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-const DEFAULT_STORE_URL = 'https://polar.sh/artistaphoto';
-const POLAR_API_URL = 'https://api.polar.sh/v1/customer-portal/license-keys';
+const DEFAULT_STORE_URL = 'https://srsigor.gumroad.com';
+const GUMROAD_API_URL = 'https://api.gumroad.com/v2/licenses/verify';
 
-// Your Polar.sh Organization ID (replace with your actual org ID from Polar.sh dashboard)
-const POLAR_ORGANIZATION_ID = '752cf07e-872c-4678-91a6-a1883aadee6d';
+// Your Gumroad Product IDs (get these from your Gumroad product settings)
+// Add both Solo and Team product IDs here
+const GUMROAD_PRODUCT_IDS = [
+  'R4Nv9B5P5-9sdVR3E3ytdg==',  // Solo plan
+  '3i7epkgA3v0HK0r_UghsZg==',  // Team plan
+];
 
 interface CachedLicense {
   licenseInfo: LicenseInfo;
@@ -25,7 +28,7 @@ let _licenseKey: string | null = null;
 let _licenseInfo: LicenseInfo | null = null;
 let _isValidated: boolean = false;
 let _config: LicenseConfig = {
-  organizationId: POLAR_ORGANIZATION_ID,
+  productIds: GUMROAD_PRODUCT_IDS,
   storeUrl: DEFAULT_STORE_URL,
   cacheDuration: DEFAULT_CACHE_DURATION,
   enableCache: true,
@@ -34,7 +37,7 @@ let _config: LicenseConfig = {
 export class LicenseManager {
   /**
    * Configure the license manager
-   * @param config - Configuration options including organizationId (required for validation)
+   * @param config - Configuration options including productId (required for validation)
    */
   static configure(config: Partial<LicenseConfig>): void {
     _config = { ..._config, ...config };
@@ -42,7 +45,7 @@ export class LicenseManager {
 
   /**
    * Set and validate a license key
-   * @param key - The license key from Polar.sh
+   * @param key - The license key from Gumroad
    * @returns Promise<LicenseInfo> - Information about the validated license
    * @throws Error if license is invalid
    */
@@ -63,8 +66,8 @@ export class LicenseManager {
       }
     }
 
-    // Validate with Polar.sh
-    const result = await LicenseManager.validateWithPolar(_licenseKey);
+    // Validate with Gumroad
+    const result = await LicenseManager.validateWithGumroad(_licenseKey);
 
     if (!result.valid) {
       _isValidated = false;
@@ -144,51 +147,78 @@ export class LicenseManager {
 
   // ==================== Private Methods ====================
 
-  private static async validateWithPolar(key: string): Promise<LicenseValidationResult> {
+  private static async validateWithGumroad(key: string): Promise<LicenseValidationResult> {
     try {
-      const response = await fetch(`${POLAR_API_URL}/validate`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key: key,
-          organization_id: _config.organizationId,
-        }),
-      });
+      // Get product IDs from config or use defaults
+      const productIds = _config.productIds || GUMROAD_PRODUCT_IDS;
 
-      if (response.status === 404) {
-        return {
-          valid: false,
-          error: 'License key not found',
-        };
+      // Try validating with each product ID
+      // This allows a license key to work with both Solo and Team plans
+      for (const productId of productIds) {
+        try {
+          const response = await fetch(GUMROAD_API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              product_id: productId,
+              license_key: key,
+            }),
+          });
+
+          if (!response.ok) {
+            continue; // Try next product ID
+          }
+
+          const data = await response.json();
+
+          // Gumroad returns { success: true/false, purchase: {...} }
+          if (!data.success) {
+            continue; // Try next product ID
+          }
+
+          // Check if subscription is active
+          const purchase = data.purchase;
+          const isSubscription = !!purchase.subscription_id;
+          let isExpired = false;
+
+          if (isSubscription) {
+            // Check if subscription ended
+            if (purchase.subscription_ended_at) {
+              isExpired = new Date(purchase.subscription_ended_at) < new Date();
+            }
+            // If no end date, subscription is active
+          }
+
+          const isValid = data.success && !isExpired;
+
+          // If valid with this product ID, return success
+          if (isValid) {
+            return {
+              valid: true,
+              gumroadResponse: data,
+            };
+          }
+
+          // If expired, return error (don't try other products)
+          if (isExpired) {
+            return {
+              valid: false,
+              gumroadResponse: data,
+              error: 'Subscription has expired',
+            };
+          }
+        } catch {
+          // If this product ID fails, try next one
+          continue;
+        }
       }
 
-      if (response.status === 422) {
-        return {
-          valid: false,
-          error: 'Invalid license key format',
-        };
-      }
-
-      if (!response.ok) {
-        return {
-          valid: false,
-          error: `HTTP error: ${response.status}`,
-        };
-      }
-
-      const data: PolarLicenseKeyResponse = await response.json();
-
-      // Check if license is valid (status is "granted" and not expired)
-      const isExpired = data.expires_at ? new Date(data.expires_at) < new Date() : false;
-      const isValid = data.status === 'granted' && !isExpired;
-
+      // If none of the product IDs worked, return error
       return {
-        valid: isValid,
-        polarResponse: data,
-        error: !isValid ? LicenseManager.getErrorMessage(data, isExpired) : undefined,
+        valid: false,
+        error: 'License key not found',
       };
     } catch (error) {
       // If network error and we have cache, use cache
@@ -197,7 +227,7 @@ export class LicenseManager {
         if (cached && cached.licenseInfo.key === key) {
           return {
             valid: true,
-            polarResponse: undefined,
+            gumroadResponse: undefined,
           };
         }
       }
@@ -209,24 +239,11 @@ export class LicenseManager {
     }
   }
 
-  private static getErrorMessage(data: PolarLicenseKeyResponse, isExpired: boolean): string {
-    if (isExpired) {
-      return 'License has expired';
-    }
-    if (data.status === 'revoked') {
-      return 'License has been revoked';
-    }
-    if (data.status === 'disabled') {
-      return 'License has been disabled';
-    }
-    return 'License is not valid';
-  }
-
   private static parseLicenseInfo(key: string, result: LicenseValidationResult): LicenseInfo {
-    const polar = result.polarResponse;
+    const gumroad = result.gumroadResponse;
 
-    if (!polar) {
-      // Fallback for cached response without polarResponse
+    if (!gumroad || !gumroad.purchase) {
+      // Fallback for cached response without gumroadResponse
       return {
         key,
         status: 'active',
@@ -239,19 +256,25 @@ export class LicenseManager {
       };
     }
 
+    const purchase = gumroad.purchase;
     let status: LicenseStatus = 'active';
-    if (polar.status === 'granted') {
-      status = 'active';
-    } else if (polar.status === 'revoked') {
-      status = 'revoked';
-    } else if (polar.status === 'disabled') {
-      status = 'disabled';
+    let expiresAt: string | null = null;
+
+    // Check if it's a subscription
+    if (purchase.subscription_id) {
+      if (purchase.subscription_ended_at) {
+        const endDate = new Date(purchase.subscription_ended_at);
+        if (endDate < new Date()) {
+          status = 'expired';
+        }
+        expiresAt = purchase.subscription_ended_at;
+      }
+      // If subscription has no end date, it's active
     }
 
-    // Check expiration
-    const isExpired = polar.expires_at ? new Date(polar.expires_at) < new Date() : false;
-    if (isExpired) {
-      status = 'expired';
+    // Check if purchase was refunded or chargebacked
+    if (purchase.refunded || purchase.chargebacked) {
+      status = 'revoked';
     }
 
     const isValid = result.valid === true;
@@ -260,14 +283,14 @@ export class LicenseManager {
       key,
       status: isValid ? 'active' : status,
       isValid: isValid,
-      expiresAt: polar.expires_at,
-      activationLimit: polar.limit_activations,
-      activationUsage: polar.validations || 0,
-      usageLimit: polar.limit_usage,
-      usage: polar.usage || 0,
-      customerEmail: polar.customer?.email,
-      customerName: polar.customer?.name,
-      productName: undefined, // Polar doesn't include product name in validation response
+      expiresAt: expiresAt,
+      activationLimit: null, // Gumroad doesn't have activation limits
+      activationUsage: 0,
+      usageLimit: null,
+      usage: 0,
+      customerEmail: purchase.email,
+      customerName: purchase.full_name,
+      productName: purchase.product_name,
     };
   }
 

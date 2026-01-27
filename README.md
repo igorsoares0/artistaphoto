@@ -181,7 +181,7 @@ Requires: Canvas API, ES2020, Web Workers (optional)
 
 ## License
 
-Commercial License - [Purchase here](https://polar.sh/artistaphoto)
+Commercial License - [Purchase here](srsigor.gumroad.com)
 
 ---
 
