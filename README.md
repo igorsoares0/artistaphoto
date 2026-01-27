@@ -24,7 +24,7 @@ npm install artistaphoto
 | **Trial** (no license) | All features | With watermark |
 | **Licensed** | All features | Clean, no watermark |
 
-Purchase a license at [polar.sh/artistaphoto](https://polar.sh/artistaphoto)
+Purchase a license at [artistasdk.com](https://artistasdk.com)
 
 ## Quick Start
 
@@ -181,8 +181,8 @@ Requires: Canvas API, ES2020, Web Workers (optional)
 
 ## License
 
-Commercial License - [Purchase here](srsigor.gumroad.com)
+Commercial License - [Purchase here](https://artistasdk.com)
 
 ---
 
-**[Full Documentation](https://github.com/user/artistaphoto#readme)** · **[Report Issue](https://github.com/user/artistaphoto/issues)** · **[Purchase License](https://polar.sh/artistaphoto)**
+**[Full Documentation](https://github.com/user/artistaphoto#readme)** · **[Report Issue](https://github.com/user/artistaphoto/issues)** · **[Purchase License](https://artistasdk.com)**
