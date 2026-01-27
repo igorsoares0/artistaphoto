@@ -1,5 +1,5 @@
 {
-  "name": "artistaphoto",
+  "name": "artistasdk",
   "version": "1.0.0",
   "description": "Professional image editor SDK for browser with filters, adjustments, crop, resize, text, shapes and more",
   "main": "./dist/index.js",

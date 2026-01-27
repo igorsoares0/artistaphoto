@@ -1,7 +1,7 @@
 # ArtistAPhoto
 
-[![npm version](https://img.shields.io/npm/v/artistaphoto.svg)](https://www.npmjs.com/package/artistaphoto)
-[![License: Commercial](https://img.shields.io/badge/license-Commercial-blue.svg)](https://polar.sh/artistaphoto)
+[![npm version](https://img.shields.io/npm/v/artistasdk.svg)](https://www.npmjs.com/package/artistasdk)
+[![License: Commercial](https://img.shields.io/badge/license-Commercial-blue.svg)](https://artistasdk.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
 **Powerful browser-based image editing SDK with filters, adjustments, crop, resize, text, shapes, and undo/redo support.**
@@ -12,7 +12,7 @@
 ## Installation
 
 ```bash
-npm install artistaphoto
+npm install artistasdk
 ```
 
 ## License
@@ -29,7 +29,7 @@ Purchase a license at [artistasdk.com](https://artistasdk.com)
 ## Quick Start
 
 ```typescript
-import { ArtistAPhoto } from 'artistaphoto';
+import { ArtistAPhoto } from 'artistasdk';
 
 // Load image (works without license - exports will have watermark)
 const editor = await ArtistAPhoto.fromFile(file);
@@ -162,7 +162,7 @@ await ArtistAPhoto.refreshLicense();            // Force refresh
 ## Error Handling
 
 ```typescript
-import { ArtistAPhoto, LicenseError, ImageLoadError } from 'artistaphoto';
+import { ArtistAPhoto, LicenseError, ImageLoadError } from 'artistasdk';
 
 try {
   await ArtistAPhoto.setLicenseKey('invalid-key');
@@ -185,4 +185,4 @@ Commercial License - [Purchase here](https://artistasdk.com)
 
 ---
 
-**[Full Documentation](https://github.com/user/artistaphoto#readme)** · **[Report Issue](https://github.com/user/artistaphoto/issues)** · **[Purchase License](https://artistasdk.com)**
+**[Purchase License](https://artistasdk.com)** · **[Documentation](https://www.npmjs.com/package/artistasdk)**
